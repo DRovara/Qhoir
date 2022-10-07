@@ -1,0 +1,46 @@
+.selectedItem,
+.unselectedItem {
+    border-radius: 10px;
+    background-color: white;
+    width: 30px;
+    height: 30px;
+    border: 2px solid white;
+    float: left;
+    margin-right: 5px;
+}
+
+.unselectedItem:hover {
+    background-color: lightgray;
+    border: 2px solid lightgray;
+}
+
+.selectedItem:hover {
+    background-color: lightgray;
+    border: 2px solid lightblue;
+}
+
+.unselectedItem:active {
+    background-color: #AAAAAA;
+    border: 2px solid #AAAAAA;
+}
+
+.selectedItem:active {
+    background-color: #AAAAAA;
+    border: 2px solid lightblue;
+}
+
+
+.selectedItem {
+    background-color: lightgray;
+    border: 2px solid lightgray;
+    width: 30px;
+    height: 30px;
+}
+
+.icon {
+    height: 90%;
+    width: 90%;
+    position: relative;
+    left: 5%;
+    top: 5%;
+}

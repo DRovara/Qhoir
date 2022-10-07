@@ -2,6 +2,14 @@
   padding: 0 2rem;
 }
 
+
+.contents {
+  width: 100%;
+  position: fixed;
+  left: 0;
+  top: 34px;
+}
+
 .main {
   min-height: 100vh;
   padding: 4rem 0;

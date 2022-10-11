@@ -1,0 +1,69 @@
+.mainVisible {
+    visibility: visible;
+}
+
+.mainInvisible {
+    visibility: hidden;
+}
+
+.mainVisible,
+.mainInvisible {
+    position: fixed;
+    width: 70vw;
+    height: 40vh;
+    top: 25vh;
+    left: 20vw;
+    background-color: #dddddd;
+
+    padding: 0.5vh;
+}
+
+.dropArea {
+    border-radius: 10px;
+    border-color: #666666;
+    border-style: dashed;
+    width: 100%;
+    height: 28vh;
+    font: 30px Courier;
+    text-align: center;
+    color: #666666;
+    margin-bottom: 5vh;
+}
+
+.dropArea span {
+    position: relative;
+    width: 100%;
+    left: 0%;
+    top: 50%;
+    transform: translate(0, -50%);
+}
+
+.cancelButton,
+.importButton {
+    float: left;
+    width: 50%;
+    height: 6vh;
+}
+
+.backgroundVisible {
+    visibility: visible;
+}
+
+.backgroundInvisible {
+    visibility: hidden;
+}
+
+.backgroundVisible,
+.backgroundInvisible {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    background-color: #0000005f;
+    z-index: 10;
+}
+
+.fileUpload {
+    visibility: hidden;
+}

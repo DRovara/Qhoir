@@ -7,6 +7,7 @@ import styles from '../styles/UtensilBarItem.module.css';
 type UtensilBarItemProps = {
   name: string,
   onChange?: (value: boolean) => void
+  buttonOnly: boolean
 }
 
 type UtensilBarItemState = {
@@ -20,6 +21,11 @@ class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState>
   }
 
   click() {
+    if(this.props.buttonOnly) {
+      this.props.onChange?.call(null, true);
+      return;
+    }
+
     const newVal = !this.state.selected;
     this.setState((state) => ({
       selected: !state.selected,

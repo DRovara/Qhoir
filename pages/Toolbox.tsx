@@ -88,6 +88,7 @@ class Toolbox extends Component<ToolboxProps, ToolboxState> {
                         <ToolboxItem id={8} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={9} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={10} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={27} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                     </ToolboxMenu>
                     <ToolboxMenu title='Single-Qubit Gates'>
                         <ToolboxItem id={11} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
@@ -96,6 +97,24 @@ class Toolbox extends Component<ToolboxProps, ToolboxState> {
                         <ToolboxItem id={14} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={15} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={16} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={25} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                    </ToolboxMenu>
+                    <ToolboxMenu title='Multi-Qubit Gates'>
+                        <ToolboxItem id={19} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={20} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={21} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={22} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={23} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={24} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={26} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={28} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={33} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                    </ToolboxMenu>
+                    <ToolboxMenu title='UI Blocks'>
+                        <ToolboxItem id={29} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={30} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={31} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={32} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                     </ToolboxMenu>
 
                 </div>

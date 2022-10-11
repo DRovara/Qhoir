@@ -106,7 +106,7 @@ class View {
         this.context.fillStyle = "#FFFEF2";
         this.context.fillRect(xPos, 10, this.width / 20, this.width / 200 * 4);
         this.context.fillStyle = "#000000";
-        this.context.font = "25px Calibri";
+        this.context.font = "25px Courier";
         this.context.textBaseline = "top";
         this.context.fillText("x: " + this.scrollX*-1, xPos + 5, 15);
 
@@ -116,7 +116,7 @@ class View {
         this.context.fillStyle = "#FFFEF2";
         this.context.fillRect(xPos, 10 + 5 + this.width / 200 * 4 + 4, this.width / 20, this.width / 200 * 4);
         this.context.fillStyle = "#000000";
-        this.context.font = "25px Calibri";
+        this.context.font = "25px Courier";
         this.context.textBaseline = "top";
         this.context.fillText("y: " + this.scrollY*-1, xPos + 5, 15 + 5 + this.width / 200 * 4 + 4);
 
@@ -205,7 +205,7 @@ class View {
     }
 
     public componentAt(x: number, y: number): CircuitComponent | undefined {
-        return this.circuit.getComponents().find((component) => component.getX() < x && component.getY() < y && component.getX() + component.getWidth() > x && component.getY() + component.getHeight() > y);
+        return this.circuit.getComponents().find((component) => component.checkCollision(x, y));
     }
 
     public removeComponentAt(x: number, y: number): void {
@@ -228,6 +228,7 @@ class View {
     }
 
     public openDetails(component: CircuitComponent | undefined, x: number, y: number): void {
+        this.currentDetailsView?.close();
         if(component == undefined) {
             this.currentDetailsView = null;
             this.update();
@@ -247,7 +248,20 @@ class View {
         }
         return false;
     }
+
+    public keyDown(keyCode: string): void {
+        this.currentDetailsView?.keyDown(keyCode);
+        if(this.currentDetailsView != null)
+            this.update();
+    }
     
+    public getDetailsView(): DetailsView | null {
+        return this.currentDetailsView;
+    }
+
+    public getCircuit(): Circuit {
+        return this.circuit;
+    }
 }
 
 export { View };

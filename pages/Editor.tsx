@@ -4,9 +4,10 @@ import Image from 'next/image'
 import { MouseEvent, Component, createRef, useEffect, Children, ReactElement, RefObject } from 'react';
 import styles from '../styles/Editor.module.css';
 import { View } from '../model/View';
-import { CircuitComponent } from './CircuitComponent';
+import { CircuitComponent } from '../model/Circuit';
 import { ComponentType } from '../model/ComponentTypes';
 import { UtensilBar } from './UtensilBar';
+import { LoadFile } from './LoadFile';
 
 type ComponentEntry = {
     x: number;
@@ -27,8 +28,9 @@ type EditorState = {
 class Editor extends Component<EditorProps, EditorState> {
 
     private canvasRef = createRef<HTMLCanvasElement>();
+    private loadFileRef = createRef<LoadFile>();
     private view: View | null = null;
-    private dragging: CircuitComponent | null = null;
+    private dragging: CircuitComponent | undefined = undefined;
     private wasDragging: boolean = false;
 
 
@@ -84,7 +86,7 @@ class Editor extends Component<EditorProps, EditorState> {
                 this.view?.removeComponentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
             }
         }
-        this.dragging = null;
+        this.dragging = undefined;
         this.wasDragging = false;
 
         this.setState((state) => ({
@@ -144,15 +146,15 @@ class Editor extends Component<EditorProps, EditorState> {
         const dy = this.state.mouseY - clientY;
 
 
-        if (this.props.utensils.current?.state.scroll && this.dragging == null)
+        if (this.props.utensils.current?.state.scroll && this.dragging == undefined)
             this.view?.scroll(dx, dy);
         else if (this.props.utensils.current?.state.scroll) {
             if(this.props.utensils.current.state.snap) {
-                const snappedPos = this.doSnap(this.dragging.getX(), this.dragging.getY());
-                this.dragging.setX(snappedPos[0]);
-                this.dragging.setY(snappedPos[1]);
+                const snappedPos = this.doSnap(this.dragging!.getX(), this.dragging!.getY());
+                this.dragging?.setX(snappedPos[0]);
+                this.dragging?.setY(snappedPos[1]);
             }
-            this.dragging.move(-dx * window.devicePixelRatio, -dy * window.devicePixelRatio);
+            this.dragging?.move(-dx * window.devicePixelRatio, -dy * window.devicePixelRatio);
             this.wasDragging = true;
         }
 
@@ -189,6 +191,10 @@ class Editor extends Component<EditorProps, EditorState> {
         document.addEventListener("keydown", (ev) => {
             if (ev.key == "Escape") {
                 this.view?.selectSocket(null);
+                this.view?.openDetails(undefined, -1, -1);
+            }
+            else {
+                this.view?.keyDown(ev.key);
             }
         });
     }
@@ -198,12 +204,17 @@ class Editor extends Component<EditorProps, EditorState> {
         return (
             <div>
                 <canvas className={styles.editor} ref={this.canvasRef} width="500px" height="500px" onMouseDown={(ev) => this.mouseDown(ev)} onMouseUp={(ev) => this.mouseUp(ev)} onMouseMove={(ev) => this.mouseMove(ev)}></canvas>
+                <LoadFile ref={this.loadFileRef} onUpload={(value) => this.getView()?.getCircuit().deserialize(value)}></LoadFile>
             </div>
         )
     }
 
     getView(): View | null {
         return this.view;
+    }
+
+    public showLoad(): void {
+        this.loadFileRef.current?.show();
     }
 }
 

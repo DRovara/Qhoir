@@ -41,15 +41,15 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
             if(ev.key == "Escape") {
                 this.scrollItem.current?.set(true);
             }
-            if(ev.key == "Alt") {
+            if(ev.key == "Alt" && this.props.editor.current?.getView()?.getDetailsView() == null) {
                 this.snapItem.current?.set(true);
             }
-            if(ev.key == "e") {
+            if(ev.key == "e" && this.props.editor.current?.getView()?.getDetailsView() == null) {
                 this.eraserItem.current?.set(true);
             }
         });
         document.addEventListener("keyup", (ev) => {
-            if(ev.key == "Alt") {
+            if(ev.key == "Alt" && this.props.editor.current?.getView()?.getDetailsView() == null) {
                 this.snapItem.current?.set(false);
             }
         });
@@ -100,9 +100,11 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
         return (
             <div>
                 <div className={styles.utensilBar}>
-                    <UtensilBarItem name="scroll" ref={this.scrollItem} onChange={(value) => this.setScroll(value)}></UtensilBarItem>
-                    <UtensilBarItem name="eraser" ref={this.eraserItem} onChange={(value) => this.setEraser(value)}></UtensilBarItem>
-                    <UtensilBarItem name="snap" ref={this.snapItem} onChange={(value) => this.setSnap(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="scroll" ref={this.scrollItem} onChange={(value) => this.setScroll(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="eraser" ref={this.eraserItem} onChange={(value) => this.setEraser(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="snap" ref={this.snapItem} onChange={(value) => this.setSnap(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={true} name="import" onChange={(_) => this.load()}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={true} name="save" onChange={(_) => this.save()}></UtensilBarItem>
                 </div>
             </div>
         )
@@ -115,6 +117,23 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
     holdNothing(): void {
         this.scrollItem.current?.set(false, true);
         this.eraserItem.current?.set(false, true);
+    }
+
+    load(): void {
+        this.props.editor.current?.showLoad();
+    }
+
+    save(): void {
+        const encoding = this.props.editor.current?.getView()?.getCircuit().serialize();
+
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encoding);
+        element.setAttribute('download', "circuit.json");
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
     }
 }
 

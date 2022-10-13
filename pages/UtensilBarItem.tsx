@@ -6,19 +6,25 @@ import styles from '../styles/UtensilBarItem.module.css';
 
 type UtensilBarItemProps = {
   name: string,
-  onChange?: (value: boolean) => void
-  buttonOnly: boolean
+  annotation?: string,
+  onChange?: (value: boolean) => void,
+  buttonOnly: boolean,
+  float?: string,
+  alternativeName?: string,
 }
 
 type UtensilBarItemState = {
-  selected: boolean
+  selected: boolean,
+  enabled: boolean
 }
 
 class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState> {
 
   state: UtensilBarItemState = {
     selected: false,
+    enabled: true
   }
+
 
   click() {
     if(this.props.buttonOnly) {
@@ -28,20 +34,23 @@ class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState>
 
     const newVal = !this.state.selected;
     this.setState((state) => ({
-      selected: !state.selected,
+      selected: newVal,
+      enabled: state.enabled
     }));
     this.props.onChange?.call(null, newVal);
   }
 
   reset() {
     this.setState((state) => ({
-      selected: false
+      selected: false,
+      enabled: state.enabled
     }));
   }
 
   set(selected: boolean, propagate: boolean = true) {
     this.setState((state) => ({
-      selected: selected
+      selected: selected,
+      enabled: state.enabled
     }));
     if(propagate) {
       this.props.onChange?.call(null, selected);
@@ -50,10 +59,18 @@ class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState>
 
   render() {
     return (
-      <div className={this.state.selected ? styles.selectedItem : styles.unselectedItem} onClick={() => this.click()}>
-        <img src={"utensils/" + this.props.name + ".png"} className={styles.icon} title={this.props.name}/>
+      <div className={(this.state.selected ? styles.selectedItem : styles.unselectedItem) + " " + (this.props.float == "right" ? styles.floatRight : "")} onClick={() => this.click()}>
+        <img src={"utensils/" + (this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + ".png"} className={styles.icon} title={(this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + (this.props.annotation != null ? " [" + this.props.annotation + "]" : "")}/>
+        <div className={!this.state.enabled ? styles.disabledOverlay : styles.noDisabledOverlay}></div>
       </div>
     )
+  }
+
+  public setEnabled(enabled: boolean): void {
+    this.setState((state) => ({
+      selected: state.selected,
+      enabled: enabled
+    }));
   }
 }
 

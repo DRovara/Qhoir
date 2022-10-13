@@ -34,6 +34,11 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
     private scrollItem = createRef<UtensilBarItem>();
     private eraserItem = createRef<UtensilBarItem>();
     private snapItem = createRef<UtensilBarItem>();
+    private playPauseItem = createRef<UtensilBarItem>();
+    private undoItem = createRef<UtensilBarItem>();
+    private redoItem = createRef<UtensilBarItem>();
+
+    private lastKeyDown: number = 0;
 
     componentDidMount(): void {
         this.scrollItem.current?.set(true);
@@ -44,8 +49,36 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
             if(ev.key == "Alt" && this.props.editor.current?.getView()?.getDetailsView() == null) {
                 this.snapItem.current?.set(true);
             }
-            if(ev.key == "e" && this.props.editor.current?.getView()?.getDetailsView() == null) {
+            if(ev.key.toLocaleLowerCase() == "e" && this.props.editor.current?.getView()?.getDetailsView() == null) {
                 this.eraserItem.current?.set(true);
+            }
+            if(ev.key == " ") {
+                const currentTime = new Date().getTime();
+                if(currentTime - this.lastKeyDown > 200) {
+                    this.playPauseItem.current?.click();
+                    this.lastKeyDown = currentTime;
+                }
+            }
+            if(ev.key.toLocaleLowerCase() == "z" && ev.ctrlKey && !ev.shiftKey) {
+                const currentTime = new Date().getTime();
+                if(currentTime - this.lastKeyDown > 200) {
+                    this.props.editor.current?.undo();
+                    this.lastKeyDown = currentTime;
+                }
+            }
+            if(ev.key.toLocaleLowerCase() == "y" && ev.ctrlKey) {
+                const currentTime = new Date().getTime();
+                if(currentTime - this.lastKeyDown > 200) {
+                    this.props.editor.current?.redo();
+                    this.lastKeyDown = currentTime;
+                }
+            }
+            if(ev.key.toLocaleLowerCase() == "z" && ev.ctrlKey && ev.shiftKey) {
+                const currentTime = new Date().getTime();
+                if(currentTime - this.lastKeyDown > 200) {
+                    this.props.editor.current?.redo();
+                    this.lastKeyDown = currentTime;
+                }
             }
         });
         document.addEventListener("keyup", (ev) => {
@@ -53,6 +86,9 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
                 this.snapItem.current?.set(false);
             }
         });
+
+        this.undoItem.current?.setEnabled(false);
+        this.redoItem.current?.setEnabled(false);
     }
 
     setScroll(scroll: boolean): void {
@@ -100,11 +136,14 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
         return (
             <div>
                 <div className={styles.utensilBar}>
-                    <UtensilBarItem buttonOnly={false} name="scroll" ref={this.scrollItem} onChange={(value) => this.setScroll(value)}></UtensilBarItem>
-                    <UtensilBarItem buttonOnly={false} name="eraser" ref={this.eraserItem} onChange={(value) => this.setEraser(value)}></UtensilBarItem>
-                    <UtensilBarItem buttonOnly={false} name="snap" ref={this.snapItem} onChange={(value) => this.setSnap(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="scroll" annotation="Esc" ref={this.scrollItem} onChange={(value) => this.setScroll(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="eraser" annotation="e" ref={this.eraserItem} onChange={(value) => this.setEraser(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="snap" annotation="Alt" ref={this.snapItem} onChange={(value) => this.setSnap(value)}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={true} name="undo" annotation="Ctrl+z" ref={this.undoItem} onChange={(_) => this.props.editor.current?.undo()}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={true} name="redo" annotation="Ctry+y" ref={this.redoItem} onChange={(_) => this.props.editor.current?.redo()}></UtensilBarItem>
                     <UtensilBarItem buttonOnly={true} name="import" onChange={(_) => this.load()}></UtensilBarItem>
                     <UtensilBarItem buttonOnly={true} name="save" onChange={(_) => this.save()}></UtensilBarItem>
+                    <UtensilBarItem buttonOnly={false} name="pause" annotation="space" onChange={(value) => this.playPause(value)} float="right" alternativeName="play" ref={this.playPauseItem}></UtensilBarItem>
                 </div>
             </div>
         )
@@ -128,12 +167,22 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
 
         var element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encoding);
-        element.setAttribute('download', "circuit.json");
+        element.setAttribute('download', "circuit.qw");
 
         element.style.display = 'none';
         document.body.appendChild(element);
 
         element.click();
+    }
+
+    playPause(value: boolean): void {
+        this.props.editor.current?.getView()?.getCircuit().setPaused(value);
+        this.props.editor.current?.getView()?.update();
+    }
+
+    public updateUndoRedoEnabled(undo: boolean, redo: boolean): void {
+        this.undoItem.current?.setEnabled(undo);
+        this.redoItem.current?.setEnabled(redo);
     }
 }
 

@@ -30,7 +30,7 @@ class LoadFile extends Component<LoadFileProps, LoadFileState> {
   render() {
     return (
       <div className={this.state.visible ? styles.backgroundVisible : styles.backgroundInvisible}>
-        <input type="file" id="fileUpload" className={styles.fileUpload} ref={this.fileUploadRef} onChange={(ev) => this.uploadThroughClick(ev)}></input>
+        <input type="file" id="fileUpload" className={styles.fileUpload} ref={this.fileUploadRef} onChange={(ev) => this.uploadThroughClick(ev)} accept=".qw"></input>
         <div className={this.state.visible ? styles.mainVisible : styles.mainInvisible} ref={this.mainDivRef}>
           <div className={styles.dropArea} onDragOver={(event) => this.dragOver(event)} onDrop={(event) => this.drop(event)} onClick={(ev) => this.clickUpload(ev)}><span ref={this.actionSpanRef}>{this.state.loadMessage}</span></div>
           <button className={styles.cancelButton} onClick={() => this.cancelClick()}>cancel</button>

@@ -1,4 +1,4 @@
-import { AreaComponent, CircuitComponent, ClassicalMeasureComponent, ClassicalSourceComponent, ControlledRComponent, QuantumMeasureComponent, RComponent, TextComponent } from "./Circuit"
+import { AreaComponent, CircuitComponent, ClassicalMeasureComponent, ClassicalSourceComponent, ControlledRComponent, QuantumMeasureComponent, QuantumSourceComponent, RComponent, TextComponent } from "./Circuit"
 import { View } from "./View";
 
 abstract class DetailsView {
@@ -13,6 +13,8 @@ abstract class DetailsView {
     public static createFor(owningComponent: CircuitComponent, x: number, y: number): DetailsView | null {
         if(owningComponent.getComponentId() == 0)
             return new ClassicalSourceDetailsView(owningComponent, x, y);
+            if(owningComponent.getComponentId() == 1)
+            return new QuantumSourceDetailsView(owningComponent, x, y);
         if(owningComponent.getComponentId() == 17)
             return new ClassicalMeasureDetailsView(owningComponent, x, y);
         if(owningComponent.getComponentId() == 18)
@@ -710,6 +712,206 @@ class AreaDetailsView extends DetailsView {
         const idx = x + y * Math.floor(selW / squareSize);
         if(idx >= 0 && idx < AreaDetailsView.colours.length)
             this.colourIndex = idx;
+    }
+}
+
+class QuantumSourceDetailsView extends DetailsView {
+
+    private currentZero = 1;
+    private currentOne = 0;
+
+    private overrideZero: string | null = null;
+    private overrideOne: string | null = null;
+
+    private lastClick = 0;
+    private lastKey = "";
+
+    private justEnteredEdit: boolean = false;
+
+    private sourceComponent;
+
+    public constructor(owningComponent: CircuitComponent, x: number, y: number) {
+        super(owningComponent, x, y, 700, 300);
+
+        this.sourceComponent = owningComponent as QuantumSourceComponent;
+        this.setZero(this.sourceComponent.getZeroCoefficient());
+        
+    }
+
+    private setZero(num: number): void {
+        if(num < -1 || num > 1)
+            num = Math.sign(num);
+        this.currentZero = num;
+        this.currentOne = Math.sqrt(1 - num*num);
+    }
+
+    private setOne(num: number): void {
+        if(num < -1 || num > 1)
+            num = Math.sign(num);
+        this.currentOne = num;
+        this.currentZero = Math.sqrt(1 - num*num);
+    }
+
+
+    public override render(view: View): void {
+        super.render(view);
+
+        const ctx = view.getDrawingContext();
+
+        ctx.save();
+
+        this.drawTextBoxes(ctx);      
+
+        ctx.restore();
+    }
+
+    private getTextBoxPos(id: number): number[] {
+        const w = this.width * 0.3;
+        const h = 70;
+        const y = this.y + this.height / 2 - h / 2;
+        const paddingLeft = this.width * 0.05;
+        if(id == 0) {
+            return [this.x + paddingLeft, y, w, h];
+        }
+        else {
+            return [this.x + this.width - (paddingLeft + 50) - w, y, w, h];
+        }
+    }
+
+    private drawTextBoxes(ctx: CanvasRenderingContext2D): void {
+
+        ctx.font = "50px Courier";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = "#000000";
+        
+        ctx.strokeStyle = "#000000";
+        const texts = [
+            this.overrideZero != null ? this.overrideZero : this.roundForOutput(this.currentZero),
+            this.overrideOne != null ? this.overrideOne : this.roundForOutput(this.currentOne)
+        ];
+
+        let firstEnd = 0;
+
+        for(let i = 0; i < 2; i++) {
+            ctx.lineWidth = 1;
+            const rect = this.getTextBoxPos(i);
+
+            //Draw Base Line
+            ctx.beginPath();
+            ctx.moveTo(rect[0] + 5, rect[1] + rect[3] - 5);
+            ctx.lineTo(rect[0] + rect[2] - 5, rect[1] + rect[3] - 5);    
+            ctx.stroke();
+            ctx.closePath();
+
+            //Draw text
+            const text = texts[i];
+            const tw = Math.min(rect[2] - 10, ctx.measureText(text).width);
+            ctx.fillText(text, rect[0] + rect[2] / 2 - tw / 2, rect[1] + rect[3] - 5, rect[2] - 10);
+
+            //Draw border
+            if((this.overrideZero && i == 0) || (this.overrideOne && i == 1)) {
+                ctx.strokeRect(rect[0], rect[1], rect[2], rect[3]);
+            }
+
+            //Draw Ket
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(rect[0] + rect[2] + 10, rect[1] + 10);
+            ctx.lineTo(rect[0] + rect[2] + 10, rect[1] + rect[3] - 5);    
+            ctx.stroke();
+            ctx.closePath();
+            ctx.fillText(i.toString(), rect[0] + rect[2] + 10 + 5, rect[1] + rect[3] - 5);
+
+            const dx = ctx.measureText(i.toString()).width;
+            ctx.beginPath();
+            ctx.moveTo(rect[0] + rect[2] + 10 + 10 + dx, rect[1] + 10);
+            ctx.lineTo(rect[0] + rect[2] + 10 + 10 + dx + 10, rect[1] + (rect[3] - 15) / 2 + 10);    
+            ctx.lineTo(rect[0] + rect[2] + 10 + 10 + dx, rect[1] + rect[3] - 5);    
+            ctx.stroke();
+            ctx.closePath();
+
+            if(i == 0) {
+                firstEnd = rect[0] + rect[2] + 10 + 10 + dx + 10;
+            }
+
+        }
+
+        const rect2 = this.getTextBoxPos(1);
+        const plusWidth = ctx.measureText("+").width;
+        ctx.fillText("+", (rect2[0] + firstEnd) / 2 - plusWidth / 2, rect2[1] + rect2[3] - 5);
+
+        
+
+    }
+
+    public override mouseClick(x: number, y: number): void {
+        for(let i = 0; i < 2; i++) {
+            const box = this.getTextBoxPos(i);
+            if(x > box[0] && y > box[1] && x < box[0] + box[2] && y < box[1] + box[3]) {
+                this.switchFocus(i + 1);
+                return;
+            }
+        }
+        this.switchFocus(0);
+    }
+
+    public override keyDown(keyCode: string): void {
+        const currentTime = new Date().getTime();
+        const delta = currentTime - this.lastClick;
+        if(delta < 100 && keyCode == this.lastKey)
+            return;
+        this.lastKey = keyCode;
+        this.lastClick = currentTime;
+        const allowedInputs = "0123456789.-";
+        if(!allowedInputs.includes(keyCode) && keyCode != "Backspace")
+            return;
+        if(this.overrideZero != null) {
+            if(keyCode == "Backspace")
+                this.overrideZero = this.overrideZero.substring(0, Math.max(0, this.overrideZero.length - 1));
+            else if(this.overrideZero == "0" && this.justEnteredEdit)
+                this.overrideZero = keyCode;
+            else
+                this.overrideZero += keyCode;
+        }
+        if(this.overrideOne != null) {
+            if(keyCode == "Backspace")
+                this.overrideOne = this.overrideOne.substring(0, Math.max(0, this.overrideOne.length - 1));
+            else if(this.overrideOne == "0" && this.justEnteredEdit)
+                this.overrideOne = keyCode;
+            else
+                this.overrideOne += keyCode;
+        }
+        this.justEnteredEdit = false;
+    }
+
+    private switchFocus(newFocus: number): void {
+        if(this.overrideZero != null && this.overrideZero.length > 0)
+            this.setZero(parseFloat(this.overrideZero));
+        if(this.overrideOne != null && this.overrideOne.length > 0)
+            this.setOne(parseFloat(this.overrideOne));
+
+        this.overrideZero = null;
+        this.overrideOne = null;
+
+        if(newFocus == 1)
+            this.overrideZero = this.roundForOutput(this.currentZero);
+        if(newFocus == 2)
+            this.overrideOne = this.roundForOutput(this.currentOne);
+        if(newFocus > 0)
+            this.justEnteredEdit = true;
+    }
+
+    private roundForOutput(num: number): string {
+        const result = num.toString();
+        if(result.length > 6)
+            return num.toPrecision(4);
+        return result;
+    }
+
+    public override close(): void {
+        this.switchFocus(0);
+
+        this.sourceComponent.setZeroCoefficient(this.currentZero);
     }
 }
 

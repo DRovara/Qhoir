@@ -1,5 +1,6 @@
 import { View } from "./View";
 import { componentTypes} from "../model/ComponentTypes"
+import { Simulator } from "./Simulator";
 
 class Socket {
     private socketIndex: number;
@@ -35,7 +36,23 @@ class Socket {
         const height = 16;
 
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(this.hovered || this.selected ? Circuit.hoveredSocketImage : Circuit.socketImage, x + this.x - width / 2, y + this.y - height / 2, width, height);
+
+        const image = this.hovered || this.selected ?
+            (this.quantum ? Circuit.quantumHoveredSocketImage : Circuit.hoveredSocketImage) :
+            (this.quantum ? Circuit.quantumSocketImage : Circuit.socketImage);
+            
+
+        ctx.drawImage(image, x + this.x - width / 2, y + this.y - height / 2, width, height);
+
+        if(this.input) {
+            ctx.save();
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.ellipse(x + this.x, y + this.y, width / 8, height / 8, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath();
+            ctx.restore();
+        }
     
         this.wire?.render(view);
     }
@@ -75,6 +92,23 @@ class Socket {
     public getSocketIndex(): number {
         return this.socketIndex;
     }
+
+    public getCorrespondingInputOutput(): Socket | undefined {
+        const owner = this.owner;
+        const myList = this.input ? owner.getInputSockets() : owner.getOutputSockets();
+        const oppositeList = !this.input ? owner.getInputSockets() : owner.getOutputSockets();
+
+        const idx = myList.indexOf(this);
+        if(idx >= oppositeList.length)
+            return undefined;
+        return oppositeList[idx];
+    }
+
+    public getConnectedSocket(): Socket | undefined {
+        if(this.input)
+            return this.wire?.getWireStart();
+        return this.wire?.getWireEnd();
+    }
 }
 
 class Wire {
@@ -112,7 +146,9 @@ class Wire {
         const context = view.getDrawingContext();
         context.save();
 
-        context.strokeStyle = "#000000";
+        const errorWire = this.wireStart.getOwner().isUncomputed() && this.wireEnd.getOwner().isUncomputed();
+
+        context.strokeStyle = errorWire ? "#dd0000" : "#000000";
         context.lineWidth = 5;
         context.beginPath();
         context.moveTo(fromX, fromY);
@@ -141,6 +177,8 @@ abstract class CircuitComponent {
     private id: number;
 
     protected hovered: boolean;
+    
+    private uncomputed: boolean = false;
 
     public constructor(x: number, y: number, componentId: number, id: number) {
         this.inputSockets = [];
@@ -238,6 +276,10 @@ abstract class CircuitComponent {
         return this.id;
     }
 
+    public setId(id: number): void {
+        this.id = id;
+    }
+
     public getComponentId(): number {
         return this.componentId;
     }
@@ -246,7 +288,7 @@ abstract class CircuitComponent {
         throw "Operation not implemented";
     }
 
-    public getClassicalOutput(index: number, inputs: number[]): boolean {
+    public getClassicalOutput(inputs: number[]): boolean[] {
         throw "Operation not implemented";
     }
 
@@ -254,7 +296,11 @@ abstract class CircuitComponent {
         return x > this.x && y > this.y && x < this.x + this.getWidth() && y < this.y + this.getHeight();
     }
 
-    public serialize(): string {
+    public checkComponentCollision(x: number, y: number): boolean {
+        return this.checkCollision(x, y);
+    }
+
+    public serialize(): { [key: string]: string | number | boolean | { [key: number]: string }} {
         const dict: { [key: string]: string | number | boolean | { [key: number]: string }} = {};
 
         //basic data
@@ -269,13 +315,13 @@ abstract class CircuitComponent {
         const outputLinks: { [key: number]: string } = {};
         this.outputSockets.forEach((socket) => outputLinks[socket.getSocketIndex()] = socket.getWire() != null ? socket.getWire()?.getWireEnd().getOwner().getId() + "." + socket.getWire()?.getWireEnd().getSocketIndex() : "");
         dict["inputs"] = inputLinks;
-        dict["outputs"] = inputLinks;
+        dict["outputs"] = outputLinks;
 
         //subclass data
         const data = this.getSerializableData();
         Object.keys(data).forEach((key) => dict[key] = data[key]);
 
-        return JSON.stringify(dict);
+        return dict;
     }
 
     protected getSerializableData(): { [key: string]: string | number | boolean } { return { }; }
@@ -356,6 +402,14 @@ abstract class CircuitComponent {
     public getInputSocket(index: number): Socket | undefined {
         return this.inputSockets.find((socket) => socket.getSocketIndex() == index);
     }
+
+    public setUncomputed(value: boolean): void {
+        this.uncomputed = value;
+    }
+
+    public isUncomputed(): boolean {
+        return this.uncomputed;
+    }
 }
 
 class ClassicalSourceComponent extends CircuitComponent {
@@ -368,8 +422,8 @@ class ClassicalSourceComponent extends CircuitComponent {
         this.outputSockets.push(new Socket(64 - 7, 32, 0, false, false, this));
     }
 
-    public override getClassicalOutput(index: number, inputs: number[]): boolean {
-        return this.on;
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [this.on];
     }
 
     public isOn(): boolean {
@@ -387,6 +441,27 @@ class ClassicalSourceComponent extends CircuitComponent {
     protected setSerializableData(encoding: { [key: string]: string | number | boolean | { [key: number]: string }}): void {
         this.on = encoding["on"] as boolean;
     }
+
+    public override render(view: View): void {
+        super.render(view);
+
+        const ctx = view.getDrawingContext();
+        ctx.save();
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.fillStyle = this.on ? "#00ff00" : "#444444";
+
+        const centerX = this.x + view.getScrollX() + this.getWidth() / 2;
+        const centerY = this.y + view.getScrollY() + this.getHeight() / 2;
+        const radius = 7;
+
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, radius, radius, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.closePath();
+        ctx.restore();
+    }
 }
 
 class ClassicalSinkComponent extends CircuitComponent {
@@ -396,14 +471,57 @@ class ClassicalSinkComponent extends CircuitComponent {
 
         this.inputSockets.push(new Socket(7, 32, 0, true, false, this));
     }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [];
+    }
 }
 
 class QuantumSourceComponent extends CircuitComponent {
+
+    private zeroCoefficient: number = 1;
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 1, id);
 
         this.outputSockets.push(new Socket(64 - 7, 32, 0, false, true, this));
+    }
+
+    public setZeroCoefficient(num: number): void {
+        this.zeroCoefficient = num;
+    }
+
+    public getZeroCoefficient(): number {
+        return this.zeroCoefficient;
+    }
+
+    protected override getSerializableData(): { [key: string]: string | number | boolean; } {
+        return { "zeroCoefficient": this.zeroCoefficient };
+    }
+
+    protected override setSerializableData(encoding: { [key: string]: string | number | boolean | { [key: number]: string } }): void {
+        this.zeroCoefficient = encoding["zeroCoefficient"] as number;
+    }
+
+    public override render(view: View): void {
+        super.render(view);
+
+        const startX = 10 + this.x + view.getScrollX();
+        const startY = 32 + this.y - 5 + view.getScrollY();
+        const w = 44;
+        const h = 10;
+        const firstPart = w * this.zeroCoefficient * this.zeroCoefficient;
+
+        const ctx = view.getDrawingContext();
+        ctx.save();
+        ctx.fillStyle = "#5050ff";
+        ctx.fillRect(startX, startY, firstPart, h);
+        
+        ctx.fillStyle = "#50cf00";
+        ctx.fillRect(startX + firstPart, startY, w - firstPart, h);
+        ctx.restore();
+
+        this.getOutputSockets()[0].render(view, this.x + view.getScrollX(), this.y + view.getScrollY());
     }
 }
 
@@ -427,8 +545,9 @@ class ClassicalMeasureComponent extends CircuitComponent {
         this.outputSockets.push(new Socket(64 - 7, 32, 1, false, false, this));
     }
 
-    public override getClassicalOutput(index: number, inputs: number[]): boolean {
-        return inputs[0] >= 1;
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        this.result = inputs[0] >= 1;
+        return [this.result];
     }
 
     public getResult(): boolean {
@@ -438,11 +557,29 @@ class ClassicalMeasureComponent extends CircuitComponent {
     public setResult(result: boolean): void {
         this.result = result;
     }
+
+    public override render(view: View): void {
+
+        const ctx = view.getDrawingContext();
+        ctx.save();
+        ctx.fillStyle = this.result ? "#50cf00" : "#888888";
+
+        const startX = this.x + view.getScrollX() + 12;
+        const startY = this.y + view.getScrollY() + 25;
+        const width = 43;
+        const height = 18;
+
+        ctx.fillRect(startX, startY, width, height);
+        ctx.restore();
+
+        super.render(view);
+    }
 }
 
 class QuantumMeasureComponent extends CircuitComponent {
 
     private buckets: number[] = [ 0.3, 0.2, 0.4, 0.1 ];
+    private oneRate: number = 0.5;
     private measureGroup: number = 1;
 
     public constructor(x: number, y: number, id: number) {
@@ -472,12 +609,43 @@ class QuantumMeasureComponent extends CircuitComponent {
         this.measureGroup = group;
     }
 
+    public setOneRate(rate: number): void {
+        this.oneRate = rate;
+    }
+
+    public getOneRate(): number {
+        return this.oneRate;
+    }
+
     protected override getSerializableData(): { [key: string]: string | number | boolean; } {
         return { "measureGroup": this.measureGroup };
     }
 
     protected setSerializableData(encoding: { [key: string]: string | number | boolean | { [key: number]: string }}): void {  
         this.measureGroup = encoding["measureGroup"] as number;
+    }
+
+    public override render(view: View): void {
+
+        const ctx = view.getDrawingContext();
+        ctx.save();
+        
+        const startX = this.x + view.getScrollX() + 12;
+        const startY = this.y + view.getScrollY() + 25;
+        const width = 40;
+        const height = 18;
+
+        const zeroPart = width * (1 - this.oneRate);
+
+        ctx.fillStyle = "#5050ff"; 
+        ctx.fillRect(startX, startY, zeroPart, height);
+        
+        ctx.fillStyle = "#50cf00";
+        ctx.fillRect(startX + zeroPart, startY, width - zeroPart, height);
+
+        ctx.restore();
+
+        super.render(view);
     }
 }
 
@@ -619,8 +787,8 @@ class ControlledCircuitComponent extends CircuitComponent {
         super(x, y, componentId, id);
 
         this.inputSockets.push(new Socket(7, 32, 0, true, true, this));
-        this.inputSockets.push(new Socket(32, 7, 0, true, true, this));
-        this.outputSockets.push(new Socket(64 - 7, 32, 1, false, true, this));
+        this.inputSockets.push(new Socket(32, 7, 1, true, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, true, this));
     }
 
     public override render(view: View): void {
@@ -763,9 +931,9 @@ class QuantumSwapComponent extends CircuitComponent {
         super(x, y, 28, id);
 
         this.inputSockets.push(new Socket(7, 18, 0, true, true, this));
-        this.inputSockets.push(new Socket(7, 46, 0, true, true, this));
-        this.inputSockets.push(new Socket(64 - 7, 18, 0, false, true, this));
-        this.inputSockets.push(new Socket(64 - 7, 46, 0, false, true, this));
+        this.inputSockets.push(new Socket(7, 46, 1, true, true, this));
+        this.inputSockets.push(new Socket(64 - 7, 18, 2, false, true, this));
+        this.inputSockets.push(new Socket(64 - 7, 46, 3, false, true, this));
     }
 
     public override getUnitary(): number[][] {
@@ -782,9 +950,9 @@ class CCNOTComponent extends CircuitComponent {
         super(x, y, 33, id);
 
         this.inputSockets.push(new Socket(7, 32, 0, true, true, this));
-        this.inputSockets.push(new Socket(18, 7, 0, true, true, this));
-        this.inputSockets.push(new Socket(46, 7, 0, true, true, this));
-        this.outputSockets.push(new Socket(64 - 7, 32, 1, false, true, this));
+        this.inputSockets.push(new Socket(18, 7, 1, true, true, this));
+        this.inputSockets.push(new Socket(46, 7, 2, true, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 3, false, true, this));
     }
 
     public override render(view: View): void {
@@ -799,14 +967,11 @@ class ClassicalPipeComponent extends CircuitComponent {
         super(x, y, 31, id);
 
         this.inputSockets.push(new Socket(12, 32, 0, true, false, this));
-        this.outputSockets.push(new Socket(64 - 12, 32, 0, false, false, this));
+        this.outputSockets.push(new Socket(64 - 12, 32, 1, false, false, this));
     }
 
-    public override getUnitary(): number[][] {
-        return [
-            [1, 0],
-            [0, 1] //TODO: "e^ipi/4"
-        ];
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] >= 1];
     }
 }
 
@@ -816,7 +981,7 @@ class QuantumPipeComponent extends CircuitComponent {
         super(x, y, 32, id);
 
         this.inputSockets.push(new Socket(12, 32, 0, true, true, this));
-        this.outputSockets.push(new Socket(64 - 12, 32, 0, false, true, this));
+        this.outputSockets.push(new Socket(64 - 12, 32, 1, false, true, this));
     }
 
     public override getUnitary(): number[][] {
@@ -922,10 +1087,10 @@ class AreaComponent extends CircuitComponent {
         "#00000033",
     ];
 
-    public constructor(x: number, y: number, id: number) {
+    public constructor(x: number, y: number, width: number, height: number, id: number) {
         super(x, y, 30, id);
-        this.width = 64;
-        this.height = 64;
+        this.width = width;
+        this.height = height;
     }
 
     public getColourId(): number {
@@ -954,6 +1119,15 @@ class AreaComponent extends CircuitComponent {
 
         ctx.strokeRect(realX, realY, this.width, this.height);
 
+        if(this.hovered) {
+            ctx.save();
+            ctx.globalAlpha = 0.4;
+            ctx.fillStyle = "#ff0000";
+            ctx.globalCompositeOperation = "multiply";
+            ctx.fillRect(realX - 5, realY - 5, this.width + 10, this.height + 10);
+            ctx.restore();
+        }
+
         ctx.restore();
     }
 
@@ -965,14 +1139,155 @@ class AreaComponent extends CircuitComponent {
         this.colourId = encoding["colourId"] as number;
     }
 
+    public override checkCollision(x: number, y: number): boolean {
+        const borderSizeHalf = 8;
+
+        const smallCollision = x > this.x + borderSizeHalf && y > this.y + borderSizeHalf && x < this.x + this.width - borderSizeHalf && y < this.y + this.height - borderSizeHalf;
+        if(smallCollision)
+            return false;
+        
+        return x > this.x - borderSizeHalf && y > this.y - borderSizeHalf && x < this.x + this.width + borderSizeHalf && y < this.y + this.height + borderSizeHalf;
+        
+    }
+
+    public override checkComponentCollision(x: number, y: number): boolean {
+        return false;
+    }
+
 
 }
 
+
+//Classical Components
+class NotComponent extends CircuitComponent {
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 4, id);
+
+        this.inputSockets.push(new Socket(3, 32, 0, true, false, this));
+        this.outputSockets.push(new Socket(64 - 18, 32, 1, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] == 0];
+    }
+}
+class AndComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 5, id);
+
+        this.inputSockets.push(new Socket(7, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(7, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] == 1 && inputs[1] == 1];
+    }
+
+}
+
+class OrComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 6, id);
+
+        this.inputSockets.push(new Socket(20, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(20, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] == 1 || inputs[1] == 1];
+    }
+
+}
+
+class NandComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 7, id);
+
+        this.inputSockets.push(new Socket(7, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(7, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [!(inputs[0] == 1 && inputs[1] == 1)];
+    }
+
+}
+
+class NorComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 8, id);
+
+        this.inputSockets.push(new Socket(20, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(20, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [!(inputs[0] == 1 || inputs[1] == 1)];
+    }
+}
+
+class XorComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 9, id);
+
+        this.inputSockets.push(new Socket(20, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(20, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] != inputs[1]];
+    }
+
+}
+
+class XnorComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 10, id);
+
+        this.inputSockets.push(new Socket(20, 18, 0, true, false, this));
+        this.inputSockets.push(new Socket(20, 46, 1, true, false, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] == inputs[1]];
+    }
+
+}
+
+class ForkComponent extends CircuitComponent {
+
+    public constructor(x: number, y: number, id: number) {
+        super(x, y, 27, id);
+
+        this.inputSockets.push(new Socket(0, 32, 0, true, false, this));
+        this.outputSockets.push(new Socket(64, 4, 1, false, false, this));
+        this.outputSockets.push(new Socket(64, 64 - 4, 2, false, false, this));
+    }
+
+    public override getClassicalOutput(inputs: number[]): boolean[] {
+        return [inputs[0] == 1, inputs[0] == 1];
+    }
+
+}
 
 class Circuit {
     public static images: HTMLImageElement[];
     public static socketImage: HTMLImageElement;
     public static hoveredSocketImage: HTMLImageElement;
+    public static quantumSocketImage: HTMLImageElement;
+    public static quantumHoveredSocketImage: HTMLImageElement;
 
     private components: CircuitComponent[];
     private nextId: number = 0;
@@ -985,6 +1300,11 @@ class Circuit {
         Circuit.socketImage.src = "socket.png";
         Circuit.hoveredSocketImage = new Image(16, 16);
         Circuit.hoveredSocketImage.src = "socket-hover.png";
+        Circuit.quantumSocketImage = new Image(16, 16);
+        Circuit.quantumSocketImage.src = "socket-quantum.png";
+        Circuit.quantumHoveredSocketImage = new Image(16, 16);
+        Circuit.quantumHoveredSocketImage.src = "socket-hover-quantum.png";
+
         Circuit.images = [];
         for(let i = 0; i < 34; i++)
         {
@@ -1000,141 +1320,134 @@ class Circuit {
     public canAdd(x: number, y: number, exclude: CircuitComponent | null = null): boolean {
         const width = 64;
         const height = 64;
-        return !this.components.some((component) => component != exclude && component.getX() + component.getWidth() > x && component.getX() < x + width && component.getY() + component.getHeight() > y && component.getY() < y + height);
+
+        const corners = [
+            [x + 1, y + 1],
+            [x + width, y],
+            [x, y + height],
+            [x + width - 1, y + height - 1]
+        ];
+
+        return !this.components.some((component) => component != exclude && corners.some((c) => component.checkComponentCollision(c[0], c[1])));
     }
 
-    public addComponent(x: number, y: number, componentId: number): CircuitComponent | undefined {
-        const id = this.getNextId();
+    public addExistingComponent(component: CircuitComponent): void {
+        if(this.getComponent(component.getId()) != undefined)
+            component.setId(this.getNextId());
+        this.components.push(component);
+        
+    }
+
+    public addComponent(x: number, y: number, componentId: number, forceId: number = -1): CircuitComponent | undefined {
+        let id = forceId;
+        if(id == -1)
+            id = this.getNextId();
         if(!this.canAdd(x, y))
             return undefined;
+        let component: CircuitComponent | null = null;
         if(componentId == 0) {
-            const component = new ClassicalSourceComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ClassicalSourceComponent(x, y, id);
         }
         if(componentId == 1) {
-            const component = new QuantumSourceComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new QuantumSourceComponent(x, y, id);
         }
         if(componentId == 2) {
-            const component = new ClassicalSinkComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ClassicalSinkComponent(x, y, id);
         }
         if(componentId == 3) {
-            const component = new QuantumSinkComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new QuantumSinkComponent(x, y, id);
+        }
+        if(componentId == 4) {
+            component = new NotComponent(x, y, id);
+        }
+        if(componentId == 5) {
+            component = new AndComponent(x, y, id);
+        }
+        if(componentId == 6) {
+            component = new OrComponent(x, y, id);
+        }
+        if(componentId == 7) {
+            component = new NandComponent(x, y, id);
+        }
+        if(componentId == 8) {
+            component = new NorComponent(x, y, id);
+        }
+        if(componentId == 9) {
+            component = new XorComponent(x, y, id);
+        }
+        if(componentId == 10) {
+            component = new XnorComponent(x, y, id);
         }
         if(componentId == 11) {
-            const component = new PauliXComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliXComponent(x, y, id);
         }
         if(componentId == 12) {
-            const component = new PauliYComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliYComponent(x, y, id);
         }
         if(componentId == 13) {
-            const component = new PauliZComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliZComponent(x, y, id);
         }
         if(componentId == 14) {
-            const component = new PauliHComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliHComponent(x, y, id);
         }
         if(componentId == 15) {
-            const component = new PauliSComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliSComponent(x, y, id);
         }
         if(componentId == 16) {
-            const component = new PauliTComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new PauliTComponent(x, y, id);
         }
         if(componentId == 17) {
-            const component = new ClassicalMeasureComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ClassicalMeasureComponent(x, y, id);
         }
         if(componentId == 18) {
-            const component = new QuantumMeasureComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new QuantumMeasureComponent(x, y, id);
         }
         if(componentId == 19) {
-            const component = new ControlledXComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledXComponent(x, y, id);
         }
         if(componentId == 20) {
-            const component = new ControlledYComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledYComponent(x, y, id);
         }
         if(componentId == 21) {
-            const component = new ControlledZComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledZComponent(x, y, id);
         }
         if(componentId == 22) {
-            const component = new ControlledHComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledHComponent(x, y, id);
         }
         if(componentId == 23) {
-            const component = new ControlledSComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledSComponent(x, y, id);
         }
         if(componentId == 24) {
-            const component = new ControlledTComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledTComponent(x, y, id);
         }
         if(componentId == 25) {
-            const component = new RComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new RComponent(x, y, id);
         }
         if(componentId == 26) {
-            const component = new ControlledRComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ControlledRComponent(x, y, id);
+        }
+        if(componentId == 27) {
+            component = new ForkComponent(x, y, id);
         }
         if(componentId == 28) {
-            const component = new QuantumSwapComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new QuantumSwapComponent(x, y, id);
         }
         if(componentId == 29) {
-            const component = new TextComponent(x, y, id);
-            this.components.push(component);
-            return component;
-        }
-        if(componentId == 30) { //TODO area needs its own add method, also needs its own delete and should not support move
-            const component = new AreaComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new TextComponent(x, y, id);
         }
         if(componentId == 31) {
-            const component = new ClassicalPipeComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new ClassicalPipeComponent(x, y, id);
         }
         if(componentId == 32) {
-            const component = new QuantumPipeComponent(x, y, id);
-            this.components.push(component);
-            return component;
+            component = new QuantumPipeComponent(x, y, id);
         }
         if(componentId == 33) {
-            const component = new CCNOTComponent(x, y, id);
+            component = new CCNOTComponent(x, y, id);
+        }
+
+        if(component != null) {
             this.components.push(component);
+            
             return component;
         }
 
@@ -1147,6 +1460,7 @@ class Circuit {
         component.getInputSockets().forEach((socket) => socket.getWire()?.remove());
         component.getOutputSockets().forEach((socket) => socket.getWire()?.remove());
         this.components.splice(this.components.indexOf(component), 1);
+        
     }
 
     public wireSockets(from: Socket, to: Socket): void {
@@ -1164,6 +1478,14 @@ class Circuit {
         const wire = new Wire(from, to);
         from.setWire(wire);
         to.setWire(wire);
+
+        
+    }
+
+    public unwireSocket(socket: Socket): void {
+        if(socket.getWire() == null)
+            return;
+        socket.getWire()?.remove();
     }
 
     public getComponent(id: number): CircuitComponent | undefined {
@@ -1172,26 +1494,104 @@ class Circuit {
 
     public serialize(): string {
         const components = this.components.map((component) => component.serialize());
-        return "[" + components.join(",") + "]"
+        const output: { [key: string]: any } = {};
+        output["components"] = components;
+        return JSON.stringify(output);
     }
 
     public deserialize(encoding: string): void {
         this.components.length = 0;
         this.nextId = 0;
         const data = JSON.parse(encoding);
-        data.forEach((entry: { [key: string]: string | number | { [socket: number]: string } }) => {
+        const components = data["components"];
+        components.forEach((entry: { [key: string]: string | number | { [socket: number]: string } }) => {
             const newComponent = this.addComponent(0, 0, entry["componentId"] as number);
             if(!newComponent?.fromEncoding(entry, this)) {
+                console.log("Error adding element " + entry["id"] + ": " + entry);
                 this.removeComponent(newComponent);
             }
         });
 
         this.nextId = Math.max(...this.components.map((component) => component.getId())) + 1;
+        this.run();
     }
 
     public getNextId(): number {
         return this.nextId++;
     }
+
+    public isPaused(): boolean {
+        return this.paused;
+    }
+
+    public setPaused(paused: boolean): void {
+        this.paused = paused;
+        this.run();
+    }
+
+    public getAllSubCircuits(): CircuitComponent[][] {
+        const result: CircuitComponent[][] = [];
+        const visited = new Set<CircuitComponent>();
+
+        let nextGroupId = 0;
+
+        for(const component of this.components) {
+            if(visited.has(component))
+                continue;
+            if(component.getInputSockets().length == 0 && component.getOutputSockets().length == 0)
+                continue;
+
+            result.push([]);
+            const groupId = nextGroupId++;
+            
+
+            result[groupId].push(component);
+            visited.add(component);
+
+
+            const toVisit = new Set<CircuitComponent>();
+            for(const input of component.getInputSockets()) {
+                if(input.getWire() == null)
+                    continue;
+                toVisit.add(input.getWire()?.getWireStart().getOwner()!);
+            }
+            for(const output of component.getOutputSockets()) {
+                if(output.getWire() == null)
+                    continue;
+                toVisit.add(output.getWire()?.getWireEnd().getOwner()!);
+            }
+
+            while(toVisit.size > 0) {
+                toVisit.forEach((next) => {
+                    toVisit.delete(next);
+                    if(visited.has(next))
+                        return;
+                    result[groupId].push(next);
+                    visited.add(next);
+
+
+                    for(const input of next.getInputSockets()) {
+                        if(input.getWire() == null || visited.has(input.getWire()?.getWireStart().getOwner()!))
+                            continue;
+                        toVisit.add(input.getWire()?.getWireStart().getOwner()!);
+                    }
+                    for(const output of next.getOutputSockets()) {
+                        if(output.getWire() == null || visited.has(output.getWire()?.getWireEnd().getOwner()!))
+                            continue;
+                        toVisit.add(output.getWire()?.getWireEnd().getOwner()!);
+                    }
+                });
+            }
+        }
+
+        return result;
+    }
+
+    public run(): void {
+        if(this.paused)
+            return;
+        new Simulator().simulate(this);
+    }
 }
 
-export { Socket, Wire, CircuitComponent, Circuit, ClassicalSourceComponent, ClassicalMeasureComponent, QuantumMeasureComponent, RComponent, ControlledRComponent, TextComponent, AreaComponent }
+export { Socket, Wire, CircuitComponent, Circuit, ClassicalSourceComponent, QuantumSourceComponent, ClassicalMeasureComponent, QuantumMeasureComponent, RComponent, ControlledRComponent, TextComponent, AreaComponent }

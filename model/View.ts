@@ -1,4 +1,4 @@
-import { Circuit, CircuitComponent, Socket } from "./Circuit";
+import { AreaComponent, Circuit, CircuitComponent, Socket } from "./Circuit";
 import { DetailsView } from "./DetailsView";
 
 class View {
@@ -20,6 +20,11 @@ class View {
     private selectedSocket: Socket | null = null;
 
     private currentDetailsView: DetailsView | null = null;
+
+    private updatePaused: boolean = false;
+
+    private placingAreaStart: number[] = [0, 0];
+    private placingArea: boolean = false;
 
     public constructor(canvas: HTMLCanvasElement) {
 
@@ -62,13 +67,26 @@ class View {
         this.update();
     }
 
+    public setUpdatePaused(paused: boolean): void {
+        this.updatePaused = paused;
+    }
+
     public update(): void {
+        if(this.updatePaused)
+            return;
         this.getSizes()
         this.clear();
 
         this.drawGrid(225);
 
-        this.circuit.getComponents().forEach((c) => c.render(this));
+        this.circuit.getComponents().forEach((c) => {
+            if(c.getComponentId() == 30) //Draw areas first (i.e. in background)
+                c.render(this);
+        });
+        this.circuit.getComponents().forEach((c) => {
+            if(c.getComponentId() != 30) //Draw areas first (i.e. in background)
+                c.render(this);
+        });
 
         this.currentDetailsView?.render(this);
 
@@ -123,11 +141,25 @@ class View {
         //Held component
         if(this.heldComponent < 0)
             return;
+
+        if(this.heldComponent == 30 && this.placingArea) {
+            this.context.strokeStyle = "#000000";
+            this.context.lineWidth = 2;
+
+            const minX = Math.min(this.mouseX + this.scrollX, this.placingAreaStart[0] + this.scrollX);
+            const maxX = Math.max(this.mouseX + this.scrollX, this.placingAreaStart[0] + this.scrollX);
+            const minY = Math.min(this.mouseY + this.scrollY, this.placingAreaStart[1] + this.scrollY);
+            const maxY = Math.max(this.mouseY + this.scrollY, this.placingAreaStart[1] + this.scrollY);
+
+            this.context.strokeRect(minX, minY, maxX - minX, maxY - minY);
+
+            return;
+        }
         
         this.context.save()
         this.context.globalAlpha = 0.6;
 
-        if(!this.circuit.canAdd(this.mouseX - 32, this.mouseY - 32, this.heldComponent))
+        if(!this.circuit.canAdd(this.mouseX - 32, this.mouseY - 32))
         {
             this.context.globalAlpha = 0.4;
             this.context.fillStyle = "#ff0000";
@@ -166,8 +198,24 @@ class View {
         return this.context;
     }
 
-    public addComponent(x: number, y: number, id: number): void {
-        this.circuit.addComponent(x, y, id);
+    public addArea(x: number, y: number, width: number, height: number, forceId: number = -1): AreaComponent {
+        let id = forceId;
+        if(id == -1)
+            id = this.circuit.getNextId();
+        const component = new AreaComponent(x, y, width, height, id);
+        this.circuit.addExistingComponent(component);
+        this.update();
+        return component;
+    }
+
+    public addComponent(x: number, y: number, id: number, forceId: number = -1): CircuitComponent | undefined {
+        const result = this.circuit.addComponent(x, y, id, forceId);
+        this.update();
+        return result;
+    }
+
+    public addExistingComponent(component: CircuitComponent) {
+        this.circuit.addExistingComponent(component);
         this.update();
     }
 
@@ -189,7 +237,7 @@ class View {
             component.getOutputSockets().forEach((socket) => socket.setHovered(false));
             component.socketAt(gridX, gridY).forEach((socket) => socket.setHovered(true));
 
-            component.setHovered(component.getX() < x && component.getY() < y && component.getX() + component.getWidth() > x && component.getY() + component.getHeight() > y && this.heldComponent == -2);
+            component.setHovered(component.checkCollision(x, y) && this.heldComponent == -2);
         });
 
         this.mouseX = x;
@@ -213,22 +261,25 @@ class View {
         this.update();
     }
 
-    public selectSocket(socket: Socket | null): void {
-        if(this.selectedSocket != null && socket != null) {
-            this.circuit.wireSockets(this.selectedSocket, socket);
-            this.selectedSocket?.setSelected(false);
-            this.selectedSocket = null;
-        } 
-        else {
-            this.selectedSocket?.setSelected(false);
-            this.selectedSocket = socket;
-            this.selectedSocket?.setSelected(true);
-        }
+    public removeComponent(id: number): void {
+        this.circuit.removeComponent(this.circuit.getComponent(id));
         this.update();
+    }
+
+    public selectSocket(socket: Socket | null): void {
+        this.selectedSocket?.setSelected(false);
+        this.selectedSocket = socket;
+        this.selectedSocket?.setSelected(true);
+        this.update();
+    }
+
+    public getSelectedSocket(): Socket | null {
+        return this.selectedSocket;
     }
 
     public openDetails(component: CircuitComponent | undefined, x: number, y: number): void {
         this.currentDetailsView?.close();
+        this.circuit.run();
         if(component == undefined) {
             this.currentDetailsView = null;
             this.update();
@@ -261,6 +312,22 @@ class View {
 
     public getCircuit(): Circuit {
         return this.circuit;
+    }
+
+    public isPlacingArea(): boolean {
+        return this.placingArea;
+    }
+
+    public setPlacingArea(placing: boolean): void {
+        this.placingArea = placing;
+    }
+
+    public getPlacingAreaStart(): number[] {
+        return this.placingAreaStart;
+    }
+
+    public setPlacingAreaStart(start: number[]): void {
+        this.placingAreaStart = start;
     }
 }
 

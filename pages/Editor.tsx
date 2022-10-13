@@ -8,6 +8,8 @@ import { CircuitComponent } from '../model/Circuit';
 import { ComponentType } from '../model/ComponentTypes';
 import { UtensilBar } from './UtensilBar';
 import { LoadFile } from './LoadFile';
+import { UIAction, PlaceComponentAction, EraseComponentAction, MoveComponentAction, PlaceWireAction, PlaceAreaAction } from '../model/UIAction';
+import { Simulator } from '../model/Simulator';
 
 type ComponentEntry = {
     x: number;
@@ -32,7 +34,10 @@ class Editor extends Component<EditorProps, EditorState> {
     private view: View | null = null;
     private dragging: CircuitComponent | undefined = undefined;
     private wasDragging: boolean = false;
+    private draggingStart: number[] = [-1, -1];
 
+    private undoStack: UIAction[] = [];
+    private redoStack: UIAction[] = [];
 
     state: EditorState = {
         mouseX: -1,
@@ -46,6 +51,11 @@ class Editor extends Component<EditorProps, EditorState> {
         const clientY = ev.clientY - rect.y;
 
         this.dragging = this.view?.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
+        if(this.dragging?.getComponentId() == 30)
+            this.dragging = undefined;
+        if(this.dragging != undefined) {
+            this.draggingStart = [this.dragging.getX(), this.dragging.getY()];
+        }
         this.setState((state) => ({
             mouseX: -2,
             mouseY: -2,
@@ -66,7 +76,18 @@ class Editor extends Component<EditorProps, EditorState> {
         const clientY = newPosition[1];
         
         if (this.state.selectedComponent != -1) {
-            this.addComponent((clientX - 32) * window.devicePixelRatio - this.view?.getScrollX()!, (clientY - 32) * window.devicePixelRatio - this.view?.getScrollY()!, this.state.selectedComponent);
+            if(this.state.selectedComponent != 30)
+                this.addComponent((clientX - 32) * window.devicePixelRatio - this.view?.getScrollX()!, (clientY - 32) * window.devicePixelRatio - this.view?.getScrollY()!, this.state.selectedComponent);
+            else {
+                if(!this.view?.isPlacingArea()) {
+                    this.view?.setPlacingArea(true);
+                    this.view?.setPlacingAreaStart([clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!]);
+                }
+                else {
+                    this.addArea(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
+                    this.view.setPlacingArea(false);
+                }
+            }
         } else {
             if (this.view?.clickedDetails(originalClientX * window.devicePixelRatio, originalClientY * window.devicePixelRatio)) {
                 //NO-OP
@@ -74,7 +95,15 @@ class Editor extends Component<EditorProps, EditorState> {
             else if (this.props.utensils.current?.state.scroll) {
                 const sockets = this.view?.socketsAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
                 if (sockets?.length! > 0) {
-                    this.view?.selectSocket(sockets![0]);
+                    const previousSelect = this.view?.getSelectedSocket();
+                    if(previousSelect == null)
+                        this.view?.selectSocket(sockets![0]);
+                    else {
+                        const action = new PlaceWireAction(previousSelect, sockets![0]);
+                        action.doRedo(this.view!);
+                        this.addAction(action);
+                        this.view?.selectSocket(null);
+                    }
                 }
                 else {
                     this.view?.selectSocket(null);
@@ -83,8 +112,17 @@ class Editor extends Component<EditorProps, EditorState> {
                 }
             }
             else {
-                this.view?.removeComponentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
+                const componentToRemove = this.view?.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
+                if(componentToRemove != undefined) {
+                    const action = new EraseComponentAction(componentToRemove);
+                    action.doRedo(this.view!);
+                    this.addAction(action);
+                }
             }
+        }
+        if(this.dragging != undefined && (this.draggingStart[0] != this.dragging.getX() || this.draggingStart[1] != this.dragging.getY())) {
+            const action = new MoveComponentAction(this.dragging, this.draggingStart[0], this.draggingStart[1]);
+            this.addAction(action);
         }
         this.dragging = undefined;
         this.wasDragging = false;
@@ -173,11 +211,27 @@ class Editor extends Component<EditorProps, EditorState> {
         this.view?.update();
     }
 
+    addArea(x: number, y: number) {
+        const placingAreaStart = this.view?.getPlacingAreaStart()!;
+        const minX = Math.min(x, placingAreaStart[0]);
+        const maxX = Math.max(x, placingAreaStart[0]);
+        const minY = Math.min(y, placingAreaStart[1]);
+        const maxY = Math.max(y, placingAreaStart[1]);
+
+        const action = new PlaceAreaAction(minX, minY, maxX - minX, maxY - minY);
+        action.doRedo(this.view!);
+        this.addAction(action);
+    }
+
     addComponent(x: number, y: number, id: number) {
-        this.view?.addComponent(x, y, id);
+        const action = new PlaceComponentAction(x, y, id);
+        action.doRedo(this.view!);
+        this.addAction(action);
     }
 
     setSelectedComponent(id: number) {
+        this.view?.setPlacingArea(false);
+        
         this.setState((state) => ({
             mouseX: state.mouseX,
             mouseY: state.mouseY,
@@ -204,9 +258,16 @@ class Editor extends Component<EditorProps, EditorState> {
         return (
             <div>
                 <canvas className={styles.editor} ref={this.canvasRef} width="500px" height="500px" onMouseDown={(ev) => this.mouseDown(ev)} onMouseUp={(ev) => this.mouseUp(ev)} onMouseMove={(ev) => this.mouseMove(ev)}></canvas>
-                <LoadFile ref={this.loadFileRef} onUpload={(value) => this.getView()?.getCircuit().deserialize(value)}></LoadFile>
+                <LoadFile ref={this.loadFileRef} onUpload={(value) => this.load(value)}></LoadFile>
             </div>
         )
+    }
+
+    load(encoding: string): void {
+        this.undoStack.length = 0;
+        this.redoStack.length = 0;
+        this.getView()?.getCircuit().deserialize(encoding);
+        this.getView()?.update();
     }
 
     getView(): View | null {
@@ -215,6 +276,48 @@ class Editor extends Component<EditorProps, EditorState> {
 
     public showLoad(): void {
         this.loadFileRef.current?.show();
+    }
+
+    public undo(): void {
+        if(this.undoStack.length == 0)
+            return;
+        const action = this.undoStack.pop()!;
+        action.doUndo(this.view!);
+        this.view?.getCircuit().run();
+        this.view?.update();
+        this.redoStack.push(action);
+        this.updateUndoRedoEnabled();
+    }
+
+    public redo(): void {
+        if(this.redoStack.length == 0)
+            return;
+        const action = this.redoStack.pop()!;
+        action.doRedo(this.view!);
+        this.view?.getCircuit().run();
+        this.view?.update();
+        this.undoStack.push(action);
+        this.updateUndoRedoEnabled();
+    }
+
+    private addAction(action: UIAction): void {
+        this.view?.getCircuit().run();
+        this.view?.update();
+        this.undoStack.push(action);
+        this.redoStack.length = 0;
+        this.updateUndoRedoEnabled();
+    }
+
+    public canUndo(): boolean {
+        return this.undoStack.length > 0;
+    }
+
+    public canRedo(): boolean {
+        return this.redoStack.length > 0;
+    }
+
+    private updateUndoRedoEnabled() {
+        this.props.utensils.current?.updateUndoRedoEnabled(this.canUndo(), this.canRedo());
     }
 }
 

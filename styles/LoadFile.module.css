@@ -28,6 +28,7 @@
     text-align: center;
     color: #666666;
     margin-bottom: 5vh;
+    cursor: pointer;
 }
 
 .dropArea span {

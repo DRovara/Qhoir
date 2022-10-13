@@ -7,6 +7,20 @@
     border: 2px solid white;
     float: left;
     margin-right: 5px;
+    position: relative;
+}
+
+.selectedItem {
+    background-color: lightgray;
+    border: 2px solid lightgray;
+    width: 30px;
+    height: 30px;
+}
+
+.floatRight {
+    float: right;
+    background-color: white;
+    border: 2px solid white;
 }
 
 .unselectedItem:hover {
@@ -30,12 +44,7 @@
 }
 
 
-.selectedItem {
-    background-color: lightgray;
-    border: 2px solid lightgray;
-    width: 30px;
-    height: 30px;
-}
+
 
 .icon {
     height: 90%;
@@ -43,4 +52,23 @@
     position: relative;
     left: 5%;
     top: 5%;
+}
+
+.noDisabledOverlay,
+.disabledOverlay {
+    width: 110%;
+    height: 110%;
+    position: absolute;
+    top: -5%;
+    left: -5%;
+    background-color: #00000044;
+    border-radius: 10px;
+}
+
+.noDisabledOverlay {
+    visibility: hidden;
+}
+
+.disabledOverlay {
+    visibility: visible;
 }

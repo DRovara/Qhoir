@@ -6,8 +6,8 @@ import styles from '../styles/Editor.module.css';
 import { View } from '../model/View';
 import { CircuitComponent } from '../model/Circuit';
 import { ComponentType } from '../model/ComponentTypes';
-import { UtensilBar } from './UtensilBar';
-import { LoadFile } from './LoadFile';
+import UtensilBar from './UtensilBar';
+import LoadFile from './LoadFile';
 import { UIAction, PlaceComponentAction, EraseComponentAction, MoveComponentAction, PlaceWireAction, PlaceAreaAction } from '../model/UIAction';
 import { Simulator } from '../model/Simulator';
 
@@ -165,6 +165,7 @@ class Editor extends Component<EditorProps, EditorState> {
 
         this.view?.moveMouse(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
 
+        
         if (ev.button != 0)
             return;
 

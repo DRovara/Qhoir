@@ -60,7 +60,7 @@ class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState>
   render() {
     return (
       <div className={(this.state.selected ? styles.selectedItem : styles.unselectedItem) + " " + (this.props.float == "right" ? styles.floatRight : "")} onClick={() => this.click()}>
-        <img src={"utensils/" + (this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + ".png"} className={styles.icon} title={(this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + (this.props.annotation != null ? " [" + this.props.annotation + "]" : "")}/>
+        <Image layout='fill' src={"/utensils/" + (this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + ".png"} className={styles.icon} title={(this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + (this.props.annotation != null ? " [" + this.props.annotation + "]" : "")} alt={(this.state.selected ? (this.props.alternativeName != null ? this.props.alternativeName : this.props.name) : this.props.name) + (this.props.annotation != null ? " [" + this.props.annotation + "]" : "")}/>
         <div className={!this.state.enabled ? styles.disabledOverlay : styles.noDisabledOverlay}></div>
       </div>
     )
@@ -74,4 +74,4 @@ class UtensilBarItem extends Component<UtensilBarItemProps, UtensilBarItemState>
   }
 }
 
-export { UtensilBarItem }
+export default UtensilBarItem 

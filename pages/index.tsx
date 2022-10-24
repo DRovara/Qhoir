@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { createRef, useRef } from 'react'
 import styles from '../styles/Home.module.css'
 import Editor from './Editor'
-import { Toolbox } from './Toolbox'
-import { UtensilBar } from './UtensilBar'
+import Toolbox from './Toolbox'
+import UtensilBar from './UtensilBar'
 
 const Home: NextPage = () => {
 

@@ -30,4 +30,4 @@ class ToolboxMenu extends Component<ToolboxMenuProps, ToolboxMenuState> {
   }
 }
 
-export { ToolboxMenu }
+export default ToolboxMenu

@@ -3,9 +3,9 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { MouseEvent, Component, createRef, useEffect, useRef, RefObject } from 'react';
 import styles from '../styles/UtensilBar.module.css';
-import { UtensilBarItem } from './UtensilBarItem';
+import UtensilBarItem from './UtensilBarItem';
 import Editor  from './Editor'
-import { Toolbox } from './Toolbox';
+import Toolbox from './Toolbox';
 
 type UtensilBarProps = {
     editor: RefObject<Editor>
@@ -186,4 +186,4 @@ class UtensilBar extends Component<UtensilBarProps, UtensilBarState> {
     }
 }
 
-export { UtensilBar }
+export default UtensilBar

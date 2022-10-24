@@ -37,10 +37,10 @@ class ToolboxItem extends Component<ToolboxItemProps, ToolboxItemState> {
   render() {
     return (
       <div className={this.state.selected ? styles.selectedItem : styles.unselectedItem} onClick={() => this.click()}>
-        <img src={componentTypes[this.props.id].imageName} className={styles.icon} title={componentTypes[this.props.id].name}/>
+        <Image width="50px" height="50px" src={componentTypes[this.props.id]?.imageName} className={styles.icon} title={componentTypes[this.props.id]?.name} alt={componentTypes[this.props.id]?.name}/>
       </div>
     )
   }
 }
 
-export { ToolboxItem }
+export default ToolboxItem

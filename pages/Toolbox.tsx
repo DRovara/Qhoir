@@ -3,8 +3,8 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { MouseEvent, Component, createRef, useEffect, useRef } from 'react';
 import styles from '../styles/Toolbox.module.css';
-import { ToolboxItem } from './ToolboxItem';
-import { ToolboxMenu } from './ToolboxMenu';
+import ToolboxItem from './ToolboxItem';
+import ToolboxMenu from './ToolboxMenu';
 
 type ToolboxProps = {
     onSelectionChange?: (item: number) => void
@@ -124,4 +124,4 @@ class Toolbox extends Component<ToolboxProps, ToolboxState> {
     }
 }
 
-export { Toolbox }
+export default Toolbox

@@ -118,4 +118,4 @@ class LoadFile extends Component<LoadFileProps, LoadFileState> {
   }
 }
 
-export { LoadFile }
+export default LoadFile

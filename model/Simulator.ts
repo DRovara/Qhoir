@@ -80,15 +80,51 @@ class Simulator {
         this.initClassicalGates(subcircuit);
 
         this.simulateClassicalParts();
-        this.simulateQuantumParts(circuit, subcircuit);
+
+        const measureGroups = this.getMeasureSets(circuit, subcircuit);
+        for(const group of measureGroups) {
+            const n = group.length;
+            if(n == 0)
+                continue;
+            const dict: { [key: number ]: number } = {};
+            const results: number[] = [];
+            for(let i = 0; i < 2**n; i++) {
+                let bin = i;
+                for(let j = n - 1; j >= 0; j--) {
+                    dict[group[j].getId()] = bin % 2;
+                    bin = bin >> 1;
+                }
+                results.push(this.simulateQuantumParts(circuit, subcircuit, dict));
+            }
+
+            for(const measure of group) {
+                measure.setBuckets(results);
+            }
+        }
+
+        this.simulateQuantumParts(circuit, subcircuit, {});
     }
 
-    private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[]): void {
+    private getMeasureSets(circuit: Circuit, subcircuit: CircuitComponent[]): QuantumMeasureComponent[][] {
+        const groups: QuantumMeasureComponent[][] = [];
+
+        for(let i = 1; i <= 3; i++) {
+            groups.push(subcircuit.filter<QuantumMeasureComponent>((component): component is QuantumMeasureComponent => (component instanceof QuantumMeasureComponent) && component.getMeasureGroup() == i));
+        }
+
+        return groups;
+    }
+
+    private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[], measureAssignments: { [key: number ]: number }): number {
         this.initSources(subcircuit);
+
+        for(const sub of subcircuit) {
+            sub.setUncomputed(true);
+        }
 
 
         if(this.quantumSources.length == 0)
-            return;
+            return 0;
 
         this.quantumSources.forEach((source) => this.initQubitIndices(circuit.getComponent(source)!));
 
@@ -99,6 +135,8 @@ class Simulator {
 
 
         let current = new Vector(2**quantumBandwidth, false, new Array<number>(2**quantumBandwidth).fill(0).map((val, idx) => idx == 0 ? 1 : 0));
+
+        let totalProbability = 1;
 
         for(const layer of layers) {
             let layerUnitary = Matrix.makeIdentity(2**quantumBandwidth);
@@ -112,6 +150,7 @@ class Simulator {
                 layerUnitary = layerUnitary.matrixMultiplication(other);
             }
 
+            current = layerUnitary?.multiplyVector(current);
 
             for(let i = 0; i < layer.length; i++) {
                 if(layer[i] instanceof QuantumMeasureComponent) {
@@ -123,13 +162,31 @@ class Simulator {
                             totalZero += current.getVector()[j + k]**2;
                         }
                     }
-                    (layer[i] as QuantumMeasureComponent).setOneRate(1 - totalZero);
-                    this.quantumMeasurements[layer[i]!.getId()] = 1 - totalZero;
+
+                    if(Object.keys(measureAssignments).length == 0) {
+                        (layer[i] as QuantumMeasureComponent).setOneRate(1 - totalZero);
+                        this.quantumMeasurements[layer[i]!.getId()] = 1 - totalZero;
+                    }
+                    
+
+                    if(layer[i]!.getId() in measureAssignments) {
+                        const assignment = measureAssignments[layer[i]!.getId()];
+                        totalProbability *= Math.abs(totalZero - assignment);
+
+                        let measureUpdateObservable = new Matrix(2, 2);
+                        measureUpdateObservable.set(assignment, assignment, 1);
+                        measureUpdateObservable = measureUpdateObservable.multipy(1/(totalProbability**0.5));
+                        const measureFullObservable = Matrix.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
+
+                        current = measureFullObservable.multiplyVector(current);
+                    }
                 }
             }
 
-            current = layerUnitary?.multiplyVector(current);
+
         }
+
+        return totalProbability;
 
     }
 
@@ -179,10 +236,6 @@ class Simulator {
         //const toLayerize: CircuitComponent[] = subcircuit.filter((component) => component.getInputSockets().some((socket) => socket.isQuantum()));
         const toLayerize: CircuitComponent[] = subcircuit.filter((component) => (component.getInputSockets().some((socket) => socket.isQuantum()) || component.getOutputSockets().some((socket) => socket.isQuantum())) && component.getInputSockets().every((socket) => socket.getWire() != null));
         const alreadyLayerized = new Set<CircuitComponent>();
-
-        for(const sub of subcircuit) {
-            sub.setUncomputed(true);
-        }
 
         while(toLayerize.length > 0) {
             let changed = false;

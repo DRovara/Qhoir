@@ -294,6 +294,7 @@ class View {
             return false;
         if(x >= this.currentDetailsView.getX() && x < this.currentDetailsView.getX() + this.currentDetailsView.getWidth() && y >= this.currentDetailsView.getY() && y < this.currentDetailsView.getY() + this.currentDetailsView.getHeight()) {
             this.currentDetailsView.mouseClick(x, y);
+            this.circuit.run();
             this.update();
             return true;
         }

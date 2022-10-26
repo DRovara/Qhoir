@@ -75,8 +75,6 @@ class Toolbox extends Component<ToolboxProps, ToolboxState> {
                     <ToolboxMenu title='Tools'>
                         <ToolboxItem id={0} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={1} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
-                        <ToolboxItem id={2} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
-                        <ToolboxItem id={3} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={17} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={18} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                     </ToolboxMenu>
@@ -115,6 +113,8 @@ class Toolbox extends Component<ToolboxProps, ToolboxState> {
                         <ToolboxItem id={30} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={31} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                         <ToolboxItem id={32} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={2} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
+                        <ToolboxItem id={3} onChange={(item) => this.resetOthers(item)} ref={(item) => this.items.push(item!)}/>
                     </ToolboxMenu>
 
                 </div>

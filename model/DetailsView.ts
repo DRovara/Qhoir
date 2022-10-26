@@ -192,7 +192,7 @@ class QuantumMeasureDetailsView extends DetailsView {
 
         ctx.save();
 
-        const buckets = this.owningMeasure.getBuckets();
+        const buckets = this.owningMeasure.getMeasureGroup() > 0 ? this.owningMeasure.getBuckets() : [1 - this.owningMeasure.getOneRate(), this.owningMeasure.getOneRate()];
 
         this.drawHistogram(ctx, buckets);
         this.drawGroupSelection(ctx);
@@ -283,7 +283,7 @@ class QuantumMeasureDetailsView extends DetailsView {
             : ["#555555", "#999999"]
         
         
-        const gridXWidth = (this.boxW - 20) /buckets.length;
+        const gridXWidth = (this.boxW - 20) / buckets.length;
         for(let i = 0; i < buckets.length; i++) {
             ctx.fillStyle = colours[i % 2];
             const barHeight = diagramHeight*buckets[i];

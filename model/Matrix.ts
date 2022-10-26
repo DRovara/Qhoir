@@ -16,6 +16,13 @@ class Matrix {
         return new Matrix(array.length, array.length > 0 ? array[0].length : 0, array);
     }
 
+    public static tensorPad(before: number, after: number, matrix: Matrix) {
+        const leftMatrix = Matrix.makeIdentity(2**before);
+        const rightMatrix = Matrix.makeIdentity(2**after);
+
+        return leftMatrix.tensorProduct(matrix.tensorProduct(rightMatrix));
+    }
+
     public constructor(rows: number, columns: number, array: number[][] | null = null) {
         this._rows = rows;
         this._columns = columns;

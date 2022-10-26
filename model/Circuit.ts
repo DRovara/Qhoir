@@ -615,7 +615,7 @@ class QuantumMeasureComponent extends CircuitComponent {
 
     private buckets: number[] = [ 0.3, 0.2, 0.4, 0.1 ];
     private oneRate: number = 0;
-    private measureGroup: number = 1;
+    private measureGroup: number = 0;
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 18, id);
@@ -681,10 +681,15 @@ class QuantumMeasureComponent extends CircuitComponent {
 
         const zeroPart = width * (1 - this.oneRate);
 
-        ctx.fillStyle = "#5050ff"; 
+        const colours = this.getMeasureGroup() == 1 ? ["#2d85c5", "#61bdee"]
+            : this.getMeasureGroup() == 2 ? ["#fe3902", "#ffb403"]
+            : this.getMeasureGroup() == 3 ? ["#48a88c", "#aadea7"]
+            : ["#666666", "#aaaaaa"]
+
+        ctx.fillStyle = colours[0]; 
         ctx.fillRect(startX, startY, zeroPart, height);
         
-        ctx.fillStyle = "#50cf00";
+        ctx.fillStyle = colours[1];
         ctx.fillRect(startX + zeroPart, startY, width - zeroPart, height);
 
         ctx.restore();
@@ -901,16 +906,29 @@ class ControlledXComponent extends ControlledCircuitComponent {
         const size = 2**(idx2 - idx1 + 1);
         const componentMatrix = Matrix.makeIdentity(size);
 
+        const actionMatrix = Matrix.fromArray([
+            [0, 1], 
+            [1, 0]
+        ]);
+
         if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
             for(let i = size/2; i < size; i++) {
                 componentMatrix.set(i, i, 0);
-                componentMatrix.set(i, i + (1 - 2*(i % 2)), 1);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
             }
         }
         else { //|01><11| etc.
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
             for(let i = 1; i < size; i += 2) {
                 componentMatrix.set(i, i, 0);
-                componentMatrix.set(i, (i + size / 2) % size, 1);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
             }
         }
 
@@ -928,13 +946,99 @@ class ControlledYComponent extends ControlledCircuitComponent {
         super(x, y, 20, id);
     }
 
-    
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [0, -1], //TODO -i
+            [1, 0]  //TODO i
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
+    }
 }
 
 class ControlledZComponent extends ControlledCircuitComponent {
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 21, id);
+    }
+
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [1, 0], //TODO -i
+            [0, -1]  //TODO i
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
     }
 
     
@@ -946,6 +1050,50 @@ class ControlledHComponent extends ControlledCircuitComponent {
         super(x, y, 22, id);
     }
 
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [1/(2**0.5), 1/(2**0.5)],
+            [1/(2**0.5), -1/(2**0.5)]
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
+    }
+
     
 }
 
@@ -955,7 +1103,49 @@ class ControlledSComponent extends ControlledCircuitComponent {
         super(x, y, 23, id);
     }
 
-    
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [1, 0],
+            [0, 1] //TODO i
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
+    }
 }
 
 class ControlledTComponent extends ControlledCircuitComponent {
@@ -964,6 +1154,49 @@ class ControlledTComponent extends ControlledCircuitComponent {
         super(x, y, 24, id);
     }
 
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [1, 0],
+            [0, 1] //TODO e^ipi/4
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
+    }
     
 }
 class ControlledRComponent extends ControlledCircuitComponent {
@@ -1002,6 +1235,50 @@ class ControlledRComponent extends ControlledCircuitComponent {
         this.piCoefficient = encoding["piCoefficient"] as number;
         this.constant = encoding["constant"] as number;
     }
+
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = Matrix.makeIdentity(size);
+
+        const actionMatrix = Matrix.fromArray([
+            [1, 0],
+            [0, 1] //TODO e^ipitheta
+        ]);
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+
+            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set(i, i, 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
+                }
+            }
+        }
+        else { //|01><11| etc.
+
+            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set(i, i, 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
+                }
+            }
+        }
+
+
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+
+    }
 }
 
 class QuantumSwapComponent extends CircuitComponent {
@@ -1011,8 +1288,39 @@ class QuantumSwapComponent extends CircuitComponent {
 
         this.inputSockets.push(new Socket(7, 18, 0, true, true, this));
         this.inputSockets.push(new Socket(7, 46, 1, true, true, this));
-        this.inputSockets.push(new Socket(64 - 7, 18, 2, false, true, this));
-        this.inputSockets.push(new Socket(64 - 7, 46, 3, false, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 18, 2, false, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 46, 3, false, true, this));
+    }
+
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+    
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
+    
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = new Matrix(size, size);
+    
+        for(let i = 0; i < size; i++) {
+            if(i % 2 == 0 && i < size / 2) { //|0x0>
+                componentMatrix.set(i, i, 1);
+            }
+            else if(i % 2 == 1 && i >= size / 2) { //|1x1>
+                componentMatrix.set(i, i, 1);
+            }
+            else {
+                if(i % 2 == 0) {
+                    componentMatrix.set(i, i - size / 2 + 1, 1); //|1x0> --> |0x1>
+                }
+                else {                                           //|0x1> --> |1x0>
+                    componentMatrix.set(i, i + size / 2 - 1, 1);
+                }
+            }
+        }
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+    
     }
 
 }
@@ -1022,14 +1330,52 @@ class CCNOTComponent extends CircuitComponent {
     public constructor(x: number, y: number, id: number) {
         super(x, y, 33, id);
 
-        this.inputSockets.push(new Socket(7, 32, 0, true, true, this));
-        this.inputSockets.push(new Socket(18, 7, 1, true, true, this));
-        this.inputSockets.push(new Socket(46, 7, 2, true, true, this));
-        this.outputSockets.push(new Socket(64 - 7, 32, 3, false, true, this));
+        this.inputSockets.push(new Socket(18, 7, 0, true, true, this));
+        this.inputSockets.push(new Socket(46, 7, 1, true, true, this));
+        this.inputSockets.push(new Socket(7, 32, 2, true, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 16, 3, false, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 32, 4, false, true, this));
+        this.outputSockets.push(new Socket(64 - 7, 48, 5, false, true, this));
     }
 
     public override render(view: View): void {
         super.render(view); 
+    }
+
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx3 = Math.max(...qubitIndices);
+        let idx2 = qubitIndices[0];
+        for(let i = 1; i < 3; i++) {
+            if(qubitIndices[i] != idx1 && qubitIndices[i] != idx3)
+                idx2 = qubitIndices[i];
+        }
+    
+        const matrixLeft = Matrix.makeIdentity(2**idx1);
+        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx3 - 1));
+    
+        const size = 2**(idx3 - idx1 + 1);
+        const componentMatrix = new Matrix(size, size);
+
+        const controlBit3 = 1;
+        const controlBit2 = 2 ** (idx2 - idx1);
+        const controlBit1 = 2 ** (idx3 - idx1);
+    
+        for(let i = 0; i < size; i++) {
+            componentMatrix.set(i, i, 1);
+            if((i & controlBit1) > 0 && (i & controlBit2)) {
+                componentMatrix.set(i, i, 0);
+                if((i & controlBit3) > 0) {
+                    componentMatrix.set(i, i - controlBit3, 1);
+                }
+                else {
+                    componentMatrix.set(i, i + controlBit3, 1);
+                }
+            }
+        }
+
+        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
+    
     }
 
 }

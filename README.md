@@ -82,7 +82,12 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-TODO long description
+Qwire is a quantum circuit editing tool that allows the user to construct and immediately evaluate simple quantum and classical circuits.
+Qwire is built with its dydactic value in mind, rather than focusing on efficiency. Using a statevector simulator in the background, it can run simple quantum algorithms accurately, and supports the visualization of measurement results for further inspection of the circuit.
+
+Using a large, scrollable workspace, the user can construct multiple quantum circuits next to each other to compare their outputs, and quickly extend any constructed circuits. For small problem instances, the simulator is called in real time with any change made to the environment, so that new results are immediately observable.
+
+In addition to more than 20 functional circuit components, qwire also supports a number of UI components that can be used to organize and document complex circuits.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -100,7 +105,7 @@ TODO long description
 
 <!-- GETTING STARTED -->
 ## Getting Started
-
+<a name="getting-started"></a>
 To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
@@ -145,9 +150,19 @@ After running the development or release version of qwire, you can access it thr
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+Please refer to "<a href="#getting-started">Getting Started</a>" to learn how to setup qwire and access it through your browser of choice.
 
-TODO
+After opening qwire, you will reach the main editor view. From here, click components in the toolbox on the left to select them and then place them anywhere in the workspace through an additional click. 
+
+A runnable circuit **must** include at least one classical or quantum *source component*. After placing a source component, you may set its initial state by clicking it in the circuit editor.
+
+Components are connected to each other using wires through their _sockets_. To connect two components, first click an _output socket_ of any component, then click an _input socket_ of any different component. Input sockets can be distinguished from output sockets by a small black dot in the middle. We further distinguish two socket types: _classical sockets_ and _quantum sockets_. Only sockets of the same type can be connected to each other. Quantum sockets are highlighted by a slight blue tint around their edges.
+
+To observe any circuit results, connect a classical or quantum _measurement components_ to your circuit. Classical measurement components will light up in a green colour if their wire state is _ON_, otherwise they will remain grey.
+
+Quantum measurement components indicate the probability of `|0>` and `|1>` in the measurement result of the current qubit. By clicking a measurement, you can open a detailed result view, where you can assign the measurement to the "blue", "red", or "green" measurement group. Measurements of the same group will always be taken together. Following the basic rules of quantum information, these measurements will impact each other. The graph inside the measurement result details will also adapt to show the probabilities of all possible quantum states for the current system. 
+
+Constructed circuits may be stored on your local device by pressing the "save" button in the toolbar above the editor. The circuits are stored in a `.json` format and may be loaded again in the future. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -208,6 +223,7 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 * [Getting Started with qwire](doc/getting-started/)
 * [qwire Tutorial](doc/tutorial/)
 * [Sample Circuits](doc/samples/)
+* [qiskit Textbook on Quantum Computing](https://qiskit.org/textbook/preface.html)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

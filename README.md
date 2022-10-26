@@ -29,9 +29,6 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/DRovara/qwire">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
 <h3 align="center">qwire</h3>
 
@@ -64,6 +61,7 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#running-the-project">Running the Project</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -80,14 +78,14 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+![screenshot-bell-state-full]
 
-Qwire is a quantum circuit editing tool that allows the user to construct and immediately evaluate simple quantum and classical circuits.
-Qwire is built with its dydactic value in mind, rather than focusing on efficiency. Using a statevector simulator in the background, it can run simple quantum algorithms accurately, and supports the visualization of measurement results for further inspection of the circuit.
+Qwire is a quantum circuit editing tool that allows users to construct and immediately evaluate simple quantum and classical circuits.
+Qwire is built with its didactic value in mind, rather than focusing on efficiency. Using a statevector simulator in the background, it can run simple quantum algorithms accurately and supports the visualization of measurement results for further circuit inspection.
 
-Using a large, scrollable workspace, the user can construct multiple quantum circuits next to each other to compare their outputs, and quickly extend any constructed circuits. For small problem instances, the simulator is called in real time with any change made to the environment, so that new results are immediately observable.
+Using a large, scrollable workspace, the user can construct multiple quantum circuits next to each other to compare their outputs, and quickly extend any constructed circuits. For small problem instances, the simulator is called in real-time with any change made to the environment, so that new results are immediately observable.
 
-In addition to more than 20 functional circuit components, qwire also supports a number of UI components that can be used to organize and document complex circuits.
+In addition to more than 20 functional circuit components, qwire also supports several of UI components that can be used to organize and document complex circuits.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -150,19 +148,27 @@ After running the development or release version of qwire, you can access it thr
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Please refer to "<a href="#getting-started">Getting Started</a>" to learn how to setup qwire and access it through your browser of choice.
+Please refer to "<a href="#getting-started">Getting Started</a>" to learn how to set up qwire and access it through your browser of choice.
 
-After opening qwire, you will reach the main editor view. From here, click components in the toolbox on the left to select them and then place them anywhere in the workspace through an additional click. 
+After opening qwire, you will reach the main editor view. From here, click components in the toolbox on the left to select them and then place them anywhere in the workspace through an additional click.
+
+![screenshot-half-adder]
 
 A runnable circuit **must** include at least one classical or quantum *source component*. After placing a source component, you may set its initial state by clicking it in the circuit editor.
 
-Components are connected to each other using wires through their _sockets_. To connect two components, first click an _output socket_ of any component, then click an _input socket_ of any different component. Input sockets can be distinguished from output sockets by a small black dot in the middle. We further distinguish two socket types: _classical sockets_ and _quantum sockets_. Only sockets of the same type can be connected to each other. Quantum sockets are highlighted by a slight blue tint around their edges.
+Components are connected to each other using wires through their _sockets_. To connect two components, first, click an _output socket_ of any component, then click an _input socket_ of any different component. Input sockets can be distinguished from output sockets by a small black dot in the middle. We further distinguish two socket types: _classical sockets_ and _quantum sockets_. Only sockets of the same type can be connected. Quantum sockets are highlighted by a slight blue tint around their edges.
 
-To observe any circuit results, connect a classical or quantum _measurement components_ to your circuit. Classical measurement components will light up in a green colour if their wire state is _ON_, otherwise they will remain grey.
+![screenshot-sockets]
+
+To observe any circuit results, connect classical or quantum _measurement components_ to your circuit. Classical measurement components will light up in green if their wire state is _ON_, otherwise, they will remain grey.
 
 Quantum measurement components indicate the probability of `|0>` and `|1>` in the measurement result of the current qubit. By clicking a measurement, you can open a detailed result view, where you can assign the measurement to the "blue", "red", or "green" measurement group. Measurements of the same group will always be taken together. Following the basic rules of quantum information, these measurements will impact each other. The graph inside the measurement result details will also adapt to show the probabilities of all possible quantum states for the current system. 
 
+![screenshot-measurement]
+
 Constructed circuits may be stored on your local device by pressing the "save" button in the toolbar above the editor. The circuits are stored in a `.json` format and may be loaded again in the future. 
+
+![screenshot-rtheta]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -172,7 +178,7 @@ Constructed circuits may be stored on your local device by pressing the "save" b
 ## Roadmap
 
 - [ ] Circuit Export
-    - [ ] Open QASM
+    - [ ] OpenQASM
     - [ ] qiskit
     - [ ] Q#
 
@@ -241,7 +247,16 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 [issues-url]: https://github.com/DRovara/qwire/issues
 [license-shield]: https://img.shields.io/github/license/DRovara/qwire.svg?style=for-the-badge
 [license-url]: https://github.com/DRovara/qwire/blob/master/LICENSE.txt
-[product-screenshot]: images/screenshot.png
+
+<!-- Screenshots -->
+[screenshot-bell-state-full]: images/bell-state-tool.png
+[screenshot-bell-state]: images/bell-state.png
+[screenshot-half-adder]: images/half-adder.png
+[screenshot-measurement]: images/measurement.png
+[screenshot-rtheta]: images/rtheta.png
+[screenshot-sockets]: images/sockets.png
+
+
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
 [typescriptlang.com]: https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=blue

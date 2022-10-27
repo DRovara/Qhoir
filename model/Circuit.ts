@@ -722,8 +722,8 @@ class PauliYComponent extends SingleQubitCircuitComponent {
 
     protected override getSingleUnitary(): math.Matrix {
         return math.matrix([
-            [0, -1], //TODO -i
-            [1, 0] //TODO i
+            [0, math.multiply(math.i, -1)],
+            [math.i, 0]
         ]);
     }
 }
@@ -765,7 +765,7 @@ class SComponent extends SingleQubitCircuitComponent {
     protected override getSingleUnitary(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO i
+            [0, math.i]
         ]);
     }
 }
@@ -779,7 +779,7 @@ class TComponent extends SingleQubitCircuitComponent {
     protected override getSingleUnitary(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO e^ipi/4
+            [0, math.exp(math.multiply(math.i, math.multiply(math.pi, 0.25)))]
         ]);
     }
 }
@@ -793,10 +793,14 @@ class RComponent extends SingleQubitCircuitComponent {
         super(x, y, 25, id);
     }
 
+    private getCoefficient(): number {
+        return math.add(math.multiply(math.pi, this.getPiCoefficient()), this.getConstant());
+    }
+
     protected override getSingleUnitary(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO e^ipitheta
+            [0, math.exp(math.multiply(math.i, this.getCoefficient()))]
         ]);
     }
 
@@ -893,8 +897,8 @@ class ControlledYComponent extends ControlledCircuitComponent {
 
     protected override getTargetMatrix(): math.Matrix {
         return math.matrix([
-            [0, -1], //TODO -i
-            [1, 0] //TODO i
+            [0, math.multiply(math.i, -1)],
+            [math.i, 0]
         ]);
     }
 }
@@ -940,7 +944,7 @@ class ControlledSComponent extends ControlledCircuitComponent {
     protected override getTargetMatrix(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO i
+            [0, math.i] 
         ]);
     }
 
@@ -955,7 +959,7 @@ class ControlledTComponent extends ControlledCircuitComponent {
     protected override getTargetMatrix(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO e^ipi/4
+            [0, math.exp(math.multiply(math.i, math.multiply(math.pi, 0.25)))]
         ]);
     }
     
@@ -985,6 +989,10 @@ class ControlledRComponent extends ControlledCircuitComponent {
         return this.constant;
     }
 
+    private getCoefficient(): number {
+        return math.add(math.multiply(math.pi, this.getPiCoefficient()), this.getConstant());
+    }
+
     protected override getSerializableData(): { [key: string]: string | number | boolean; } {
         return { 
             "piCoefficient": this.piCoefficient,
@@ -1000,7 +1008,7 @@ class ControlledRComponent extends ControlledCircuitComponent {
     protected override getTargetMatrix(): math.Matrix {
         return math.matrix([
             [1, 0],
-            [0, 1] //TODO e^ipitheta
+            [0, math.exp(math.multiply(math.i, this.getCoefficient()))]
         ]);
     }
 }
@@ -1645,9 +1653,6 @@ class Circuit {
                 this.addExistingComponent(newComponent);
             } else {
                 newComponent = this.addComponent(0, 0, entry["componentId"] as number);
-            }
-            if(entry["componentId"] == 30) {
-                console.log(newComponent);
             }
             if(!newComponent?.fromEncoding(entry, this)) {
                 console.log("Error adding element " + entry["id"] + ": " + entry);

@@ -157,7 +157,8 @@ class StatevectorSimlator extends Simulator {
                     let totalZero = 0;
                     for(let j = 0; j < matrixSize; j += 2*stepSize) {
                         for(let k = 0; k < stepSize; k++) {
-                            totalZero += math.multiply(current.get([j + k, 0]) as number, current.get([j + k, 0]) as number);
+                            const value = current.get([j + k, 0]);
+                            totalZero += math.multiply(math.abs(value), math.abs(value));
                         }
                     }
 

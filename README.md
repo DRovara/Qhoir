@@ -227,7 +227,7 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 ## Further Documentation
 
 * [Getting Started with qwire](doc/getting-started/)
-* [qwire Tutorial](doc/tutorial/)
+* [qwire Editor Documentation](doc/documentation/)
 * [Sample Circuits](doc/samples/)
 * [qiskit Textbook on Quantum Computing](https://qiskit.org/textbook/preface.html)
 

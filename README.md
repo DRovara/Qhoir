@@ -162,7 +162,7 @@ Components are connected to each other using wires through their _sockets_. To c
 
 To observe any circuit results, connect classical or quantum _measurement components_ to your circuit. Classical measurement components will light up in green if their wire state is _ON_, otherwise, they will remain grey.
 
-Quantum measurement components indicate the probability of `|0>` and `|1>` in the measurement result of the current qubit. By clicking a measurement, you can open a detailed result view, where you can assign the measurement to the "blue", "red", or "green" measurement group. Measurements of the same group will always be taken together. Following the basic rules of quantum information, these measurements will impact each other. The graph inside the measurement result details will also adapt to show the probabilities of all possible quantum states for the current system. 
+Quantum measurement components indicate the probability of $|0\rangle$ and $|1\rangle$ in the measurement result of the current qubit. By clicking a measurement, you can open a detailed result view, where you can assign the measurement to the "blue", "red", or "green" measurement group. Measurements of the same group will always be taken together. Following the basic rules of quantum information, these measurements will impact each other. The graph inside the measurement result details will also adapt to show the probabilities of all possible quantum states for the current system. 
 
 ![screenshot-measurement]
 

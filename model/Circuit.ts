@@ -332,7 +332,7 @@ abstract class CircuitComponent {
         //basic data
         const x = encoding["x"] as number;
         const y = encoding["y"] as number;
-        if(!circuit.canAdd(x, y, this))
+        if(!circuit.canAdd(x, y, this) && encoding["componentId"] as number != 30)
             return false;
         this.x = x;
         this.y = y;
@@ -556,16 +556,7 @@ class QuantumSinkComponent extends CircuitComponent {
     }
 
     public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
-            [1, 0],
-            [0, 1]
-        ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
+        return Matrix.makeIdentity(2**numQubits);
     }
 }
 
@@ -1548,11 +1539,13 @@ class AreaComponent extends CircuitComponent {
     }
 
     protected override getSerializableData(): { [key: string]: string | number | boolean; } {
-        return { "colourId": this.colourId };
+        return { "colourId": this.colourId, "width": this.width, "height": this.height };
     }
 
     protected setSerializableData(encoding: { [key: string]: string | number | boolean | { [key: number]: string }}): void {  
         this.colourId = encoding["colourId"] as number;
+        this.width = encoding["width"] as number;
+        this.height = encoding["height"] as number;
     }
 
     public override checkCollision(x: number, y: number): boolean {
@@ -1921,7 +1914,16 @@ class Circuit {
         const data = JSON.parse(encoding);
         const components = data["components"];
         components.forEach((entry: { [key: string]: string | number | { [socket: number]: string } }) => {
-            const newComponent = this.addComponent(0, 0, entry["componentId"] as number);
+            let newComponent: CircuitComponent | undefined = undefined;
+            if(entry["componentId"] == 30) {
+                newComponent = new AreaComponent(0, 0, 1, 1, this.getNextId());
+                this.addExistingComponent(newComponent);
+            } else {
+                newComponent = this.addComponent(0, 0, entry["componentId"] as number);
+            }
+            if(entry["componentId"] == 30) {
+                console.log(newComponent);
+            }
             if(!newComponent?.fromEncoding(entry, this)) {
                 console.log("Error adding element " + entry["id"] + ": " + entry);
                 this.removeComponent(newComponent);

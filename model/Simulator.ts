@@ -118,7 +118,7 @@ class Simulator {
     private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[], measureAssignments: { [key: number ]: number }): number {
         this.initSources(subcircuit);
 
-        for(const sub of subcircuit) {
+        for(const sub of subcircuit.filter((component) => component.getInputSockets().some((socket) => socket.isQuantum()) || component.getOutputSockets().some((socket) => socket.isQuantum()))) {
             sub.setUncomputed(true);
         }
 

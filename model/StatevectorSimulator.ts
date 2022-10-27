@@ -1,7 +1,8 @@
 import { Simulator } from "./Simulator";
 import assert from "assert";
 import { Circuit, CircuitComponent, QuantumMeasureComponent, QuantumSourceComponent, Socket } from "./Circuit";
-import { Matrix, Vector } from "./Matrix";
+import * as math from 'mathjs';
+import { Utils } from "./Utils";
 
 class StatevectorSimlator extends Simulator {
 
@@ -10,8 +11,6 @@ class StatevectorSimlator extends Simulator {
 
     private classicalOutputs: { [key: number]: { [key: number]: number } } = {};
     private classicalGatesToCheck: Set<CircuitComponent> = new Set<CircuitComponent>();
-
-    private quantumMeasurements: { [key: number]: number } = {};
     
     public override reset(): void {
         this.quantumSources.length = 0;
@@ -127,16 +126,17 @@ class StatevectorSimlator extends Simulator {
 
 
         const quantumBandwidth = this.quantumSources.length;
+        const matrixSize = 2**quantumBandwidth;
 
         const layers = this.layerize(circuit, subcircuit, quantumBandwidth);
 
-
-        let current = new Vector(2**quantumBandwidth, false, new Array<number>(2**quantumBandwidth).fill(0).map((val, idx) => idx == 0 ? 1 : 0));
+        let current = math.matrix(new Array<number>(matrixSize).fill(0).map((entry) => [entry]));
+        current.set([0, 0], 1);
 
         let totalProbability = 1;
 
         for(const layer of layers) {
-            let layerUnitary = Matrix.makeIdentity(2**quantumBandwidth);
+            let layerUnitary = math.identity(matrixSize, matrixSize);
             const alreadyAdded = new Set<number>();
 
             for(let i = 0; i < layer.length; i++) {
@@ -144,25 +144,25 @@ class StatevectorSimlator extends Simulator {
                     continue
                 alreadyAdded.add(layer[i]!.getId());
                 const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
-                layerUnitary = layerUnitary.matrixMultiplication(other);
+                
+                layerUnitary = math.multiply(layerUnitary, other);
             }
 
-            current = layerUnitary?.multiplyVector(current);
+            current = math.multiply(layerUnitary, current);
 
             for(let i = 0; i < layer.length; i++) {
                 if(layer[i] instanceof QuantumMeasureComponent) {
                     const stepSize = 2**(quantumBandwidth - i - 1);
 
                     let totalZero = 0;
-                    for(let j = 0; j < current.length(); j += 2*stepSize) {
+                    for(let j = 0; j < matrixSize; j += 2*stepSize) {
                         for(let k = 0; k < stepSize; k++) {
-                            totalZero += current.getVector()[j + k]**2;
+                            totalZero += math.multiply(current.get([j + k, 0]) as number, current.get([j + k, 0]) as number);
                         }
                     }
 
                     if(Object.keys(measureAssignments).length == 0) {
-                        (layer[i] as QuantumMeasureComponent).setOneRate(1 - totalZero);
-                        this.quantumMeasurements[layer[i]!.getId()] = 1 - totalZero;
+                        (layer[i]! as QuantumMeasureComponent).setOneRate(1 - totalZero);
                     }
                     
 
@@ -170,12 +170,12 @@ class StatevectorSimlator extends Simulator {
                         const assignment = measureAssignments[layer[i]!.getId()];
                         totalProbability *= Math.abs(totalZero - assignment);
 
-                        let measureUpdateObservable = new Matrix(2, 2);
-                        measureUpdateObservable.set(assignment, assignment, 1);
-                        measureUpdateObservable = measureUpdateObservable.multipy(1/(totalProbability**0.5));
-                        const measureFullObservable = Matrix.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
+                        let measureUpdateObservable = math.zeros(2, 2) as math.Matrix;
+                        measureUpdateObservable.set([assignment, assignment], 1);
+                        measureUpdateObservable = math.multiply(measureUpdateObservable, 1/(totalProbability**0.5));
+                        const measureFullObservable = Utils.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
 
-                        current = measureFullObservable.multiplyVector(current);
+                        current = math.multiply(measureFullObservable, current);
                     }
                 }
             }

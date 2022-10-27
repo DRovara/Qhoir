@@ -1,6 +1,5 @@
 import assert from "assert";
 import { Circuit, CircuitComponent, QuantumMeasureComponent, QuantumSourceComponent, Socket } from "./Circuit";
-import { Matrix, Vector } from "./Matrix";
 
 abstract class Simulator {
 

@@ -1,8 +1,9 @@
 import { View } from "./View";
 import { componentTypes} from "../model/ComponentTypes"
 import { Simulator } from "./Simulator";
-import { Matrix, Vector } from "./Matrix";
 import { StatevectorSimlator } from "./StatevectorSimulator";
+import * as math from 'mathjs';
+import { Utils } from "./Utils";
 
 class Socket {
     private socketIndex: number;
@@ -286,7 +287,7 @@ abstract class CircuitComponent {
         return this.componentId;
     }
 
-    public getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+    public getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
         throw "Operation not implemented";
     }
 
@@ -501,10 +502,6 @@ class QuantumSourceComponent extends CircuitComponent {
         return Math.sqrt(1 - this.getZeroCoefficient() * this.getZeroCoefficient());
     }
 
-    public toVector(): Vector {
-        return new Vector(2, false, [this.getZeroCoefficient(), this.getOneCoefficient()]);
-    }
-
     protected override getSerializableData(): { [key: string]: string | number | boolean; } {
         return { "zeroCoefficient": this.zeroCoefficient };
     }
@@ -534,17 +531,15 @@ class QuantumSourceComponent extends CircuitComponent {
         this.getOutputSockets()[0].render(view, this.x + view.getScrollX(), this.y + view.getScrollY());
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
         const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
 
-        const componentMatrix = Matrix.fromArray([
+        const componentMatrix = math.matrix([
             [this.getZeroCoefficient(), 0],
             [this.getOneCoefficient(), 0]
         ]);
 
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
+        return Utils.tensorPad(idx, numQubits - idx - 1, componentMatrix);
     }
 }
 
@@ -556,8 +551,8 @@ class QuantumSinkComponent extends CircuitComponent {
         this.inputSockets.push(new Socket(7, 32, 0, true, true, this));
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        return Matrix.makeIdentity(2**numQubits);
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
+        return math.identity(2, 2) as math.Matrix;
     }
 }
 
@@ -616,17 +611,8 @@ class QuantumMeasureComponent extends CircuitComponent {
         this.outputSockets.push(new Socket(64 - 7, 32, 1, false, true, this));
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
-            [1, 0],
-            [0, 1]
-        ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
+        return math.identity(2**numQubits, 2**numQubits) as math.Matrix;
     }
 
     public getBuckets(): number[] {
@@ -691,7 +677,7 @@ class QuantumMeasureComponent extends CircuitComponent {
 
 }
 
-class SingleQubitCircuitComponent extends CircuitComponent {
+abstract class SingleQubitCircuitComponent extends CircuitComponent {
 
     public constructor(x: number, y: number, componentId: number, id: number) {
         super(x, y, componentId, id);
@@ -704,6 +690,14 @@ class SingleQubitCircuitComponent extends CircuitComponent {
         super.render(view); 
     }
 
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
+        const idx = qubitIndices[0];
+
+        return Utils.tensorPad(idx, numQubits - idx - 1, this.getSingleUnitary())        
+    }
+
+    protected abstract getSingleUnitary(): math.Matrix;
+
 }
 
 class PauliXComponent extends SingleQubitCircuitComponent {
@@ -712,17 +706,11 @@ class PauliXComponent extends SingleQubitCircuitComponent {
         super(x, y, 11, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [0, 1],
             [1, 0]
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);        
     }
 }
 
@@ -732,17 +720,11 @@ class PauliYComponent extends SingleQubitCircuitComponent {
         super(x, y, 12, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [0, -1], //TODO -i
-            [1, 0]  //TODO i
+            [1, 0] //TODO i
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 }
 
@@ -752,17 +734,11 @@ class PauliZComponent extends SingleQubitCircuitComponent {
         super(x, y, 13, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [1, 0],
-            [0, -1] 
+            [0, -1]
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 }
 
@@ -772,17 +748,11 @@ class HComponent extends SingleQubitCircuitComponent {
         super(x, y, 14, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [1/(2**0.5), 1/(2**0.5)],
             [1/(2**0.5), -1/(2**0.5)]
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 }
 
@@ -792,17 +762,11 @@ class SComponent extends SingleQubitCircuitComponent {
         super(x, y, 15, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO i
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 }
 
@@ -812,17 +776,11 @@ class TComponent extends SingleQubitCircuitComponent {
         super(x, y, 16, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO e^ipi/4
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 }
 
@@ -835,17 +793,11 @@ class RComponent extends SingleQubitCircuitComponent {
         super(x, y, 25, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx = qubitIndices[0];
-        const matrixLeft = Matrix.makeIdentity(2**idx);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx - 1));
-
-        const componentMatrix = Matrix.fromArray([
+    protected override getSingleUnitary(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO e^ipitheta
         ]);
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight); 
     }
 
     public setPiCoefficient(value: number): void {
@@ -865,7 +817,7 @@ class RComponent extends SingleQubitCircuitComponent {
     }
 }
 
-class ControlledCircuitComponent extends CircuitComponent {
+abstract class ControlledCircuitComponent extends CircuitComponent {
 
     public constructor(x: number, y: number, componentId: number, id: number) {
         super(x, y, componentId, id);
@@ -880,6 +832,42 @@ class ControlledCircuitComponent extends CircuitComponent {
         super.render(view); 
     }
 
+    protected abstract getTargetMatrix(): math.Matrix;
+
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
+        const idx1 = Math.min(...qubitIndices);
+        const idx2 = Math.max(...qubitIndices);
+
+        const size = 2**(idx2 - idx1 + 1);
+        const componentMatrix = math.identity(size, size) as math.Matrix;
+
+        const actionMatrix = this.getTargetMatrix();
+
+        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
+            const actionPart = math.kron(math.identity(size / 2, size / 2) as math.Matrix, actionMatrix) as math.Matrix;
+
+            for(let i = size/2; i < size; i++) {
+                componentMatrix.set([i, i], 0);
+                for(let j = size/2; j < size; j++) {
+                    componentMatrix.set([i, j], actionPart.get([i - size/2, j - size / 2]));
+                }
+            }
+        }
+        else { //|01><11| etc.
+            const actionPart = math.kron(actionMatrix, math.identity(size / 2, size / 2) as math.Matrix) as math.Matrix;
+
+            for(let i = 1; i < size; i += 2) {
+                componentMatrix.set([i, i], 0);
+                for(let j = 0; j < size/2; j++) {
+                    componentMatrix.set([i, j * 2 + 1], actionPart.get([(i - 1)/2, j]))
+                }
+            }
+        }
+
+        return Utils.tensorPad(idx1, numQubits - idx2 - 1, componentMatrix);
+
+    }
+
 }
 
 class ControlledXComponent extends ControlledCircuitComponent {
@@ -888,46 +876,11 @@ class ControlledXComponent extends ControlledCircuitComponent {
         super(x, y, 19, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
-            [0, 1], 
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
+            [0, 1],
             [1, 0]
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
 
 }
@@ -938,48 +891,11 @@ class ControlledYComponent extends ControlledCircuitComponent {
         super(x, y, 20, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
             [0, -1], //TODO -i
-            [1, 0]  //TODO i
+            [1, 0] //TODO i
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
 }
 
@@ -989,48 +905,11 @@ class ControlledZComponent extends ControlledCircuitComponent {
         super(x, y, 21, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
-            [1, 0], //TODO -i
-            [0, -1]  //TODO i
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
+            [1, 0],
+            [0, -1]
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
 
     
@@ -1042,48 +921,11 @@ class ControlledHComponent extends ControlledCircuitComponent {
         super(x, y, 22, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
             [1/(2**0.5), 1/(2**0.5)],
             [1/(2**0.5), -1/(2**0.5)]
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
 
     
@@ -1095,49 +937,13 @@ class ControlledSComponent extends ControlledCircuitComponent {
         super(x, y, 23, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO i
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
+
 }
 
 class ControlledTComponent extends ControlledCircuitComponent {
@@ -1146,48 +952,11 @@ class ControlledTComponent extends ControlledCircuitComponent {
         super(x, y, 24, id);
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO e^ipi/4
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
     
 }
@@ -1228,48 +997,11 @@ class ControlledRComponent extends ControlledCircuitComponent {
         this.constant = encoding["constant"] as number;
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        const idx1 = Math.min(...qubitIndices);
-        const idx2 = Math.max(...qubitIndices);
-
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-
-        const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = Matrix.makeIdentity(size);
-
-        const actionMatrix = Matrix.fromArray([
+    protected override getTargetMatrix(): math.Matrix {
+        return math.matrix([
             [1, 0],
             [0, 1] //TODO e^ipitheta
         ]);
-
-        if(qubitIndices[0] < qubitIndices[1]) { //|10><11| etc.
-
-            const actionPart = Matrix.makeIdentity(size / 2).tensorProduct(actionMatrix);
-
-            for(let i = size/2; i < size; i++) {
-                componentMatrix.set(i, i, 0);
-                for(let j = size/2; j < size; j++) {
-                    componentMatrix.set(i, j, actionPart.get(i - size/2, j - size / 2));
-                }
-            }
-        }
-        else { //|01><11| etc.
-
-            const actionPart = actionMatrix.tensorProduct(Matrix.makeIdentity(size / 2));
-
-            for(let i = 1; i < size; i += 2) {
-                componentMatrix.set(i, i, 0);
-                for(let j = 0; j < size/2; j++) {
-                    componentMatrix.set(i, j * 2 + 1, actionPart.get((i - 1)/2, j))
-                }
-            }
-        }
-
-
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-
     }
 }
 
@@ -1284,35 +1016,31 @@ class QuantumSwapComponent extends CircuitComponent {
         this.outputSockets.push(new Socket(64 - 7, 46, 3, false, true, this));
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
         const idx1 = Math.min(...qubitIndices);
         const idx2 = Math.max(...qubitIndices);
     
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx2 - 1));
-    
         const size = 2**(idx2 - idx1 + 1);
-        const componentMatrix = new Matrix(size, size);
+        const componentMatrix = math.zeros(size, size) as math.Matrix;
     
         for(let i = 0; i < size; i++) {
             if(i % 2 == 0 && i < size / 2) { //|0x0>
-                componentMatrix.set(i, i, 1);
+                componentMatrix.set([i, i], 1);
             }
             else if(i % 2 == 1 && i >= size / 2) { //|1x1>
-                componentMatrix.set(i, i, 1);
+                componentMatrix.set([i, i], 1);
             }
             else {
                 if(i % 2 == 0) {
-                    componentMatrix.set(i, i - size / 2 + 1, 1); //|1x0> --> |0x1>
+                    componentMatrix.set([i, i - size / 2 + 1], 1); //|1x0> --> |0x1>
                 }
                 else {                                           //|0x1> --> |1x0>
-                    componentMatrix.set(i, i + size / 2 - 1, 1);
+                    componentMatrix.set([i, i + size / 2 - 1], 1);
                 }
             }
         }
-
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-    
+        
+        return Utils.tensorPad(idx1, numQubits - idx2 - 1, componentMatrix);    
     }
 
 }
@@ -1334,7 +1062,7 @@ class CCNOTComponent extends CircuitComponent {
         super.render(view); 
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
         const idx1 = Math.min(...qubitIndices);
         const idx3 = Math.max(...qubitIndices);
         let idx2 = qubitIndices[0];
@@ -1343,31 +1071,27 @@ class CCNOTComponent extends CircuitComponent {
                 idx2 = qubitIndices[i];
         }
     
-        const matrixLeft = Matrix.makeIdentity(2**idx1);
-        const matrixRight = Matrix.makeIdentity(2**(numQubits - idx3 - 1));
-    
         const size = 2**(idx3 - idx1 + 1);
-        const componentMatrix = new Matrix(size, size);
+        const componentMatrix = math.zeros(size, size) as math.Matrix;
 
         const controlBit3 = 1;
         const controlBit2 = 2 ** (idx2 - idx1);
         const controlBit1 = 2 ** (idx3 - idx1);
     
         for(let i = 0; i < size; i++) {
-            componentMatrix.set(i, i, 1);
+            componentMatrix.set([i, i], 1);
             if((i & controlBit1) > 0 && (i & controlBit2)) {
-                componentMatrix.set(i, i, 0);
+                componentMatrix.set([i, i], 0);
                 if((i & controlBit3) > 0) {
-                    componentMatrix.set(i, i - controlBit3, 1);
+                    componentMatrix.set([i, i - controlBit3], 1);
                 }
                 else {
-                    componentMatrix.set(i, i + controlBit3, 1);
+                    componentMatrix.set([i, i + controlBit3], 1);
                 }
             }
         }
 
-        return matrixLeft.tensorProduct(componentMatrix).tensorProduct(matrixRight);           
-    
+        return Utils.tensorPad(idx1, numQubits - idx3 - 1, componentMatrix);
     }
 
 }
@@ -1395,8 +1119,8 @@ class QuantumPipeComponent extends CircuitComponent {
         this.outputSockets.push(new Socket(64 - 12, 32, 1, false, true, this));
     }
 
-    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): Matrix {
-        return Matrix.makeIdentity(2**numQubits);
+    public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
+        return math.identity(2**numQubits) as math.Matrix;
     }
 }
 

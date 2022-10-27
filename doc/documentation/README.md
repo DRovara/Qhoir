@@ -91,7 +91,7 @@ Qwire distinguishes _classical_ and _quantum_ components. Therefore, a distincti
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
 |<img src="../../public/components/classical-source.png" />|Source (classical)|Generates one classical bit. The state of the bit (<em>ON</em>/<em>OFF</em> ) can be set using the details view.|Click the slider to change the source state from <em>ON</em> to <em>OFF</em>.|
-|<img src="../../public/components/quantum-source.png" />|Source (quantum)|Generates one quantum bit. The state vector of the bit can be set using the details view.|Enter coefficients for the $\|0\rangle$ or $\|1\rangle$ states by clicking one of the states and entering a number through your keyboard. The coefficient of the opposing state is updated automaticalls so that their squared sum equals 1.|
+|<img src="../../public/components/quantum-source.png" />|Source (quantum)|Generates one quantum bit. The state vector of the bit can be set using the details view.|Enter coefficients for the $\|0\rangle$ or $\|1\rangle$ states by clicking one of the states and entering a number through your keyboard. The coefficient of the opposing state is updated automaticalls so that their squared sum equals 1. Only rational coefficients are supported.|
 |<img src="../../public/components/classical-measure.png" />|Measurement (classical)|Measures a classical bit. If the bit is <em>ON</em>, the component in the circuit lights up in green.|A larger display indicating the measured value of the bit.|
 |<img src="../../public/components/quantum-measure.png" />|Measurement (quantum)|Measures a quantum bit. The probabilities of states $\|0\rangle$ and $\|1\rangle$ are indicated by the ratios of the dark and light colours lighting up respectively.|A bar chart that shows the probability of each measurement result. By clicking one of the three group names at the top, the component is added to a measurement group.Multiple measurements of the same groups will always be measured together (i.e. the measurement results affect each other), and will have their results displayed together.|
 
@@ -132,13 +132,13 @@ Another important single-qubit gate is the <em>Hadamard</em> gate:
 |<img src="../../public/components/h.png" />|Hadamard|Creates an equal superposition from a state in the computational basis: <br> $\alpha\| 0⟩ + \beta\| 1⟩ \Rightarrow \alpha\| +⟩ - \beta\|-⟩$<br> $\|+⟩ = \frac{\| 0⟩ + \| 1⟩}{\sqrt{2}}$,<br>$\|-⟩ = \frac{\| 0⟩ - \| 1⟩}{\sqrt{2}}$|/|
 
 
-Finally, qwire supports three phase-shift gates: S, T, and R<sub>θ</sub>. These gates all leave the state $|0\rangle$ untouched, while transforming the state $|1\rangle$ with a given phase shift.
+Finally, qwire supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta$). These gates all leave the state $|0\rangle$ untouched, while transforming the state $|1\rangle$ with a given phase shift.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
 |<img src="../../public/components/s.png" />|S Gate|Multiplies the phase of $\|1\rangle$ by the imaginary constant $i$: <br>$\alpha\|0\rangle + \beta\|1\rangle ⇒ \alpha\|0\rangle + bi\|1\rangle$|/|
 |<img src="../../public/components/t.png" />|T Gate|Multiplies the phase of $\|1\rangle$ by $e^{iπ/4}$: <br>$\alpha\|0\rangle + \beta\|1\rangle ⇒ \alpha\|0\rangle + \beta e^{iπ/4}\|1\rangle$|/|
-|<img src="../../public/components/r.png" />|R<sub>θ</sub> Gate|Multiplies the phase of $\|1\rangle$ by $e^{iθ}$ for a given value of $\theta$: <br>$\alpha\|0\rangle + \beta\|1\rangle ⇒ \alpha\|0\rangle + \beta e^{i\theta}\|1\rangle$|Select a value of theta as a linear combination of $π$ and 1 by clicking the input fields and typing the values. The view on the left shows the angle $\theta$ on the unit circle.|
+|<img src="../../public/components/r.png" />|R<sub>z</sub>($\theta$) Gate|Multiplies the phase of $\|1\rangle$ by $e^{iθ}$ for a given value of $\theta$: <br>$\alpha\|0\rangle + \beta\|1\rangle ⇒ \alpha\|0\rangle + \beta e^{i\theta}\|1\rangle$|Select a value of theta as a linear combination of $π$ and 1 by clicking the input fields and typing the values. The view on the left shows the angle $\theta$ on the unit circle.|
 
 ## Multi-Qubit Gates
 Multi-Qubit Gates take multiple qubits as inputs. Unlike classical gates, quantum gates must be _reversible_. This means that the number of input and output qubits for a quantum gate must always be equal.
@@ -160,7 +160,7 @@ In qwire, controlled gates are indicated by a black bar at the top. The control 
 |<img src="../../public/components/ch.png" />|Controlled Hadamard|Applies the Hadamard gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|/|
 |<img src="../../public/components/cs.png" />|CS Gate|Applies the S gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|/|
 |<img src="../../public/components/ct.png" />|CT Gate|Applies the T gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|/|
-|<img src="../../public/components/cr.png" />|CR<sub>θ</sub> Gate|Applies the R<sub>θ</sub> gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|Select a value of theta as a linear combination of $π$ and 1 by clicking the input fields and typing the values. The view on the left shows the angle $\theta$ on the unit circle.|
+|<img src="../../public/components/cr.png" />|CR<sub>z</sub>($\theta$) Gate|Applies the R<sub>z</sub>($\theta$) gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|Select a value of theta as a linear combination of $π$ and 1 by clicking the input fields and typing the values. The view on the left shows the angle $\theta$ on the unit circle.|
 <br>
 
 Controlled gates are not limited just one control qubit. Generally in quantum computing, controlled gates may have any number of control qubits, and are expected to perform their action on the target qubit if and only if **ALL** controls are in the state $|1\rangle$. 

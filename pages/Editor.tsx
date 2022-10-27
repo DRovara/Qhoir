@@ -10,7 +10,6 @@ import UtensilBar from './UtensilBar';
 import LoadFile from './LoadFile';
 import { UIAction, PlaceComponentAction, EraseComponentAction, MoveComponentAction, PlaceWireAction, PlaceAreaAction } from '../model/UIAction';
 import { Simulator } from '../model/Simulator';
-import math, * as mathjs from 'mathjs';
 
 type ComponentEntry = {
     x: number;

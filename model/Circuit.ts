@@ -2,6 +2,7 @@ import { View } from "./View";
 import { componentTypes} from "../model/ComponentTypes"
 import { Simulator } from "./Simulator";
 import { Matrix, Vector } from "./Matrix";
+import { StatevectorSimlator } from "./StatevectorSimulator";
 
 class Socket {
     private socketIndex: number;
@@ -765,7 +766,7 @@ class PauliZComponent extends SingleQubitCircuitComponent {
     }
 }
 
-class PauliHComponent extends SingleQubitCircuitComponent {
+class HComponent extends SingleQubitCircuitComponent {
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 14, id);
@@ -785,7 +786,7 @@ class PauliHComponent extends SingleQubitCircuitComponent {
     }
 }
 
-class PauliSComponent extends SingleQubitCircuitComponent {
+class SComponent extends SingleQubitCircuitComponent {
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 15, id);
@@ -805,7 +806,7 @@ class PauliSComponent extends SingleQubitCircuitComponent {
     }
 }
 
-class PauliTComponent extends SingleQubitCircuitComponent {
+class TComponent extends SingleQubitCircuitComponent {
 
     public constructor(x: number, y: number, id: number) {
         super(x, y, 16, id);
@@ -1797,13 +1798,13 @@ class Circuit {
             component = new PauliZComponent(x, y, id);
         }
         if(componentId == 14) {
-            component = new PauliHComponent(x, y, id);
+            component = new HComponent(x, y, id);
         }
         if(componentId == 15) {
-            component = new PauliSComponent(x, y, id);
+            component = new SComponent(x, y, id);
         }
         if(componentId == 16) {
-            component = new PauliTComponent(x, y, id);
+            component = new TComponent(x, y, id);
         }
         if(componentId == 17) {
             component = new ClassicalMeasureComponent(x, y, id);
@@ -2008,7 +2009,7 @@ class Circuit {
     public run(): void {
         if(this.paused)
             return;
-        new Simulator().simulate(this);
+        new StatevectorSimlator().simulate(this);
     }
 }
 

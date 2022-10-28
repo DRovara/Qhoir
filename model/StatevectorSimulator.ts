@@ -4,6 +4,115 @@ import { Circuit, CircuitComponent, QuantumMeasureComponent, QuantumSourceCompon
 import * as math from 'mathjs';
 import { Utils } from "./Utils";
 
+class LRUCache {
+
+    private static primes = [
+        4397,
+        4409,
+        4421,
+        4423,
+        4441,
+        4447,
+        4451,
+        4457,
+        4463,
+        4481,
+        4483,
+        4493,
+        4507,
+        4513,
+        4517,
+        4519,
+        4523,
+        4547,
+        4549,
+        4561,
+        4567,
+        4583,
+        4591,
+        4597,
+        4603,
+        4621,
+        4637,
+        4639,
+        4643,
+        4649,
+        4651,
+        4657,
+        4663
+    ];
+
+    private resultCache: { [key: string]: math.Matrix } = {};
+    private unitaryCache: { [key: number]: math.Matrix } = {};
+
+    private addOrderResults: string[] = [];
+    private addOrderUnitaries: number[] = [];
+
+    private maxSize = 200;
+
+    public constructor() {
+    }
+
+    public encodeResult(current: math.Matrix, layer: (CircuitComponent | null)[]): string {
+        let encoding = 0;
+        layer.forEach((component, i) => encoding += (component != null ? component.getComponentId() + 2 : 1) * LRUCache.primes[i]);
+        return encoding + "-" + current.toString();
+    }
+
+    public encodeUnitary(layer: (CircuitComponent | null)[]): number {
+        let encoding = 0;
+        layer.forEach((component, i) => encoding += (component != null ? component.getComponentId() + 2 : 1) * LRUCache.primes[i]);
+        return encoding;
+    }
+
+    public getResult(current: math.Matrix, layer: (CircuitComponent | null)[]): math.Matrix | undefined {
+        const encoding = this.encodeResult(current, layer);
+        if(encoding in this.resultCache)
+            return this.resultCache[encoding];
+        return undefined;
+    }
+
+    public getUnitary(layer: (CircuitComponent | null)[]): math.Matrix | undefined {
+        const encoding = this.encodeUnitary(layer);
+        if(encoding in this.unitaryCache)
+            return this.unitaryCache[encoding];
+        return undefined;
+    }
+
+    public store(previous: math.Matrix, layer: (CircuitComponent | null)[], layerUnitary: math.Matrix, current: math.Matrix) {
+        if(layer.some((component) => component != null && (component.getComponentId() == 25 || component.getComponentId() == 26 || component.getComponentId() == 1)))
+            return;
+        
+        const encodingUnitary = this.encodeUnitary(layer);
+        const encodingResult = this.encodeResult(previous, layer);
+
+        const unitaryIndex = this.addOrderUnitaries.indexOf(encodingUnitary);
+        if(unitaryIndex != -1) {
+            this.addOrderUnitaries.splice(unitaryIndex, 1);
+        }
+        this.addOrderUnitaries.push(encodingUnitary);
+        
+        if(this.addOrderUnitaries.length > this.maxSize) {
+            const rem = this.addOrderUnitaries.shift() as number;
+            delete this.unitaryCache[rem];
+        }
+
+        const resultIndex = this.addOrderResults.indexOf(encodingResult);
+        if(unitaryIndex != -1) {
+            this.addOrderResults.splice(resultIndex, 1);
+        }
+        this.addOrderResults.push(encodingResult);
+        if(this.addOrderResults.length > this.maxSize) {
+            const rem = this.addOrderResults.shift() as string;
+            delete this.resultCache[rem];
+        }
+
+        this.unitaryCache[encodingUnitary] = layerUnitary;
+        this.resultCache[encodingResult] = current;
+        
+    }
+}
+
 class StatevectorSimlator extends Simulator {
 
     private quantumSources: number[] = [];
@@ -11,6 +120,13 @@ class StatevectorSimlator extends Simulator {
 
     private classicalOutputs: { [key: number]: { [key: number]: number } } = {};
     private classicalGatesToCheck: Set<CircuitComponent> = new Set<CircuitComponent>();
+
+    private cache: LRUCache;
+
+    public constructor() {
+        super();
+        this.cache = new LRUCache();
+    }
     
     public override reset(): void {
         this.quantumSources.length = 0;
@@ -18,6 +134,7 @@ class StatevectorSimlator extends Simulator {
 
         this.classicalOutputs = {};
         this.classicalGatesToCheck.clear();
+
     }
 
     private initSources(subcircuit: CircuitComponent[]): void {
@@ -67,11 +184,14 @@ class StatevectorSimlator extends Simulator {
 
     public override simulate(circuit: Circuit): void {
         const subcircuits = circuit.getAllSubCircuits();
-
+        console.log("Got subcircuits");
         subcircuits.forEach((subcircuit) => this.simulateSubcircuit(circuit, subcircuit));
+        
+        console.log("Finished simulation");
+
     }
 
-    private simulateSubcircuit(circuit: Circuit, subcircuit: CircuitComponent[]): void {
+    private simulateSubcircuit(circuit: Circuit, subcircuit: CircuitComponent[]) {
         this.reset();
         this.initClassicalGates(subcircuit);
 
@@ -136,19 +256,32 @@ class StatevectorSimlator extends Simulator {
         let totalProbability = 1;
 
         for(const layer of layers) {
-            let layerUnitary = math.identity(matrixSize, matrixSize);
-            const alreadyAdded = new Set<number>();
+            const previous = current;
+            const result = this.cache.getResult(current, layer);
 
-            for(let i = 0; i < layer.length; i++) {
-                if(layer[i] == null || alreadyAdded.has(layer[i]!.getId()))
-                    continue
-                alreadyAdded.add(layer[i]!.getId());
-                const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
-                
-                layerUnitary = math.multiply(layerUnitary, other);
+            let layerUnitary: math.Matrix | undefined = this.cache.getUnitary(layer);
+            if(result != undefined) {
+                current = result;
+            }
+            else {
+                if(layerUnitary == undefined) {
+                    layerUnitary = math.identity(matrixSize, matrixSize) as math.Matrix;
+                    const alreadyAdded = new Set<number>();
+
+                    for(let i = 0; i < layer.length; i++) {
+                        if(layer[i] == null || alreadyAdded.has(layer[i]!.getId()))
+                            continue
+                        alreadyAdded.add(layer[i]!.getId());
+                        const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
+
+                        layerUnitary = math.multiply(layerUnitary, other);
+                    }
+                }
+                current = math.multiply(layerUnitary, current);
             }
 
-            current = math.multiply(layerUnitary, current);
+            this.cache.store(previous, layer, layerUnitary!, current);
+
 
             for(let i = 0; i < layer.length; i++) {
                 if(layer[i] instanceof QuantumMeasureComponent) {

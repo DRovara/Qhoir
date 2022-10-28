@@ -1435,6 +1435,8 @@ class Circuit {
     private nextId: number = 0;
     private paused: boolean = false;
 
+    private simulator: Simulator;
+
     public constructor() {
         this.components = [];
 
@@ -1453,6 +1455,8 @@ class Circuit {
             Circuit.images.push(new Image(64, 64));
             Circuit.images[i].src = componentTypes[i].imageName;
         }
+
+        this.simulator = new StatevectorSimlator();
     }
 
     public getComponents(): CircuitComponent[] {
@@ -1738,7 +1742,8 @@ class Circuit {
     public run(): void {
         if(this.paused)
             return;
-        new StatevectorSimlator().simulate(this);
+        this.simulator.reset();
+        this.simulator.simulate(this);
     }
 }
 

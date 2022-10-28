@@ -168,6 +168,7 @@ Quantum measurement components indicate the probability of $|0\rangle$ and $|1\r
 
 Constructed circuits may be stored on your local device by pressing the "save" button in the toolbar above the editor. The circuits are stored in a `.json` format and may be loaded again in the future. 
 
+![screenshot-all-bells]
 ![screenshot-rtheta]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -255,6 +256,7 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 [screenshot-measurement]: images/measurement.png
 [screenshot-rtheta]: images/rtheta.png
 [screenshot-sockets]: images/sockets.png
+[screenshot-all-bells]: images/all-bell-states.png
 
 
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white

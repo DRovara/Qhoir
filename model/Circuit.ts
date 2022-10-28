@@ -600,7 +600,7 @@ class ClassicalMeasureComponent extends CircuitComponent {
 
 class QuantumMeasureComponent extends CircuitComponent {
 
-    private buckets: number[] = [ 0.3, 0.2, 0.4, 0.1 ];
+    private buckets: number[] = [ 0, 0 ];
     private oneRate: number = 0;
     private measureGroup: number = 0;
 

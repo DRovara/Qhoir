@@ -36,7 +36,7 @@
     quantum circuit editing tool
     <br />
     <br />
-    <a href="https://github.com/DRovara/qwire">Getting Started</a>
+    <a href="https://github.com/DRovara/qwire/doc/getting-started">Getting Started</a>
     ·
     <a href="https://github.com/DRovara/qwire/issues">Report Bug</a>
     ·
@@ -227,7 +227,7 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 <!-- Links -->
 ## Further Documentation
 
-* [Getting Started with qwire](doc/getting-started/)
+* [Getting started with qwire](doc/getting-started/)
 * [qwire Editor Documentation](doc/documentation/)
 * [Sample Circuits](doc/samples/)
 * [qiskit Textbook on Quantum Computing](https://qiskit.org/textbook/preface.html)

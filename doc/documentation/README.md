@@ -39,8 +39,8 @@ Many classical circuit editing tools provide the functionality of "splitting" wi
 
 The utensil bar is located at the very top of the editor. It contains the following utensils in order:
 
-## Scroll
 <a name="Scroll"></a>
+## Scroll
 The scroll tool allows the user to drag the circuit to scroll the view, or to drag existing components. While the scroll tool is selected, users may also click components to open their details views.
 
 The scroll tool is the default tool which is automatically selected if no other tool is active, or by pressing the "Esc" key. 
@@ -71,14 +71,14 @@ The save utensil downloads a json encoding of the current circuit to your device
 
 The load component allows users to upload such circuit encodings to the editor and loads them into the workspace.
 
-## Play / Pause
 <a name="Pause"></a>
+## Play / Pause
 The play / pause button is located on the very right of the utensil bar. It can be used to activate / deactivate qwire's statevector simulator. While the simulator is active, a simulation is run after each change made to the circuit.
 
 Pausing the simulator will prevent such simulation runs. Please keep in mind that measurement results will not update while the simulator is paused.
 
-# Components
 <a name="Components"></a>
+# Components
 The toolbox on the left of the editor consists of a list of components that can be added to your circuit. In this section, we will go into more detail on each of these components. 
 
 For a more rigorous introduction to quantum computing, please visit <a href="https://qiskit.org/textbook/preface.html">qiskit's textbook</a>.

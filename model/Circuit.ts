@@ -603,6 +603,7 @@ class QuantumMeasureComponent extends CircuitComponent {
 
     private buckets: number[] = [ 0, 0 ];
     private oneRate: number = 0;
+    private qubitIndex: number = -1;
     private measureGroup: number = 0;
 
     public constructor(x: number, y: number, id: number) {
@@ -638,6 +639,14 @@ class QuantumMeasureComponent extends CircuitComponent {
 
     public getOneRate(): number {
         return this.oneRate;
+    }
+
+    public setQubitIndex(qubit: number): void {
+        this.qubitIndex = qubit;
+    }
+
+    public getQubitIndex(): number {
+        return this.qubitIndex;
     }
 
     protected override getSerializableData(): { [key: string]: string | number | boolean; } {

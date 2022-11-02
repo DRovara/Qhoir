@@ -217,7 +217,6 @@ class Editor extends Component<EditorProps, EditorState> {
                 this.dragging?.setX(snappedPos[0] - 32 * window.devicePixelRatio);
                 this.dragging?.setY(snappedPos[1] - 32 * window.devicePixelRatio);
             }
-            console.log(dx + " " + dy);
             this.dragging?.move(-dx * window.devicePixelRatio, -dy * window.devicePixelRatio);
             this.wasDragging = true;
         }

@@ -183,7 +183,7 @@ class QuantumMeasureDetailsView extends DetailsView {
     private owningMeasure: QuantumMeasureComponent;
 
     public constructor(owningComponent: CircuitComponent, x: number, y: number) {
-        super(owningComponent, x, y, 400, 300);
+        super(owningComponent, x, y, 500, 400);
 
         this.owningMeasure = owningComponent as QuantumMeasureComponent;
 
@@ -266,7 +266,9 @@ class QuantumMeasureDetailsView extends DetailsView {
         const bottom = this.y + this.boxY + this.boxH;
         const left = this.x + this.boxX;
 
-        const lineY = bottom - 0.15*this.boxH;
+        ctx.font = "15px Courier";
+        ctx.textBaseline = "top";
+        const lineY = bottom - Math.max(0.15*this.boxH, ctx.measureText(labels[0]).width + 15);
         const diagramHeight = lineY - this.y - this.boxY - 10;
 
         ctx.beginPath();
@@ -292,22 +294,68 @@ class QuantumMeasureDetailsView extends DetailsView {
         
         
         const gridXWidth = (this.boxW - 20) / buckets.length;
+        const textHeightGridEntries = Math.ceil(15 / gridXWidth);
         for(let i = 0; i < buckets.length; i++) {
             ctx.fillStyle = colours[i % 2];
             const barHeight = diagramHeight*buckets[i];
             ctx.fillRect(left + 10 + gridXWidth * i, lineY - barHeight, gridXWidth, barHeight);
 
+            ctx.strokeStyle = i % textHeightGridEntries == 0 ? "#000000" : "#888888";
+            const dy = i % textHeightGridEntries == 0 ? 5 : 4;
             ctx.beginPath();
-            ctx.moveTo(left + 10 + gridXWidth * (i + 0.5), lineY + 5);
-            ctx.lineTo(left + 10 + gridXWidth * (i + 0.5), lineY - 5);
+            ctx.moveTo(left + 10 + gridXWidth * (i + 0.5), lineY + dy);
+            ctx.lineTo(left + 10 + gridXWidth * (i + 0.5), lineY - dy);
             ctx.closePath();
             ctx.stroke();
 
             ctx.fillStyle = "#000000";
             ctx.font = "15px Courier";
             ctx.textBaseline = "top";
-            const textWidth = ctx.measureText(labels[i]);
-            ctx.fillText(labels[i], left + 10 + gridXWidth * (i + 0.5) - textWidth.width / 2, lineY + 6);
+            const textWidth = ctx.measureText(labels[i]).width;
+            const label = this.owningMeasure.getMeasureGroup() != 0 ? 
+                labels[i].substring(0, this.owningMeasure.getQubitIndex()) + " " + labels[i].substring(this.owningMeasure.getQubitIndex() + 1)
+                : labels[i];
+
+            if(textWidth < gridXWidth) {
+                ctx.fillText(label, left + 10 + gridXWidth * (i + 0.5) - textWidth / 2, lineY + 6);
+
+                if(this.owningMeasure.getMeasureGroup() != 0) {
+                    ctx.fillStyle = colours[0];
+                    let highlightText = "";
+                    for(let j = 0; j < this.owningMeasure.getQubitIndex(); j++) {
+                        highlightText += " ";
+                    }
+                    highlightText += labels[i][this.owningMeasure.getQubitIndex()];
+                    for(let j = this.owningMeasure.getQubitIndex() + 1; j < buckets.length; j++) {
+                        highlightText += " ";
+                    }
+                    ctx.fillText(highlightText, left + 10 + gridXWidth * (i + 0.5) - textWidth / 2, lineY + 6);
+                }
+            }
+            else {
+                if(i % textHeightGridEntries != 0)
+                    continue;
+                ctx.save();
+                ctx.translate(left + 10 + gridXWidth * (i + 0.5), lineY + 6);
+                ctx.rotate(Math.PI/2);
+                ctx.textBaseline = "middle";
+                ctx.textAlign = "left";
+                ctx.fillText(label, 0, 0);
+
+                if(this.owningMeasure.getMeasureGroup() != 0) {
+                    ctx.fillStyle = colours[0];
+                    let highlightText = "";
+                    for(let j = 0; j < this.owningMeasure.getQubitIndex(); j++) {
+                        highlightText += " ";
+                    }
+                    highlightText += labels[i][this.owningMeasure.getQubitIndex()];
+                    for(let j = this.owningMeasure.getQubitIndex() + 1; j < buckets.length; j++) {
+                        highlightText += " ";
+                    }
+                    ctx.fillText(highlightText, 0, 0);
+                    ctx.restore();
+                }
+            }
 
         }
 

@@ -197,6 +197,10 @@ class StatevectorSimlator extends Simulator {
 
         this.simulateClassicalParts();
 
+        this.initSources(subcircuit);
+
+        this.quantumSources.forEach((source) => this.initQubitIndices(circuit.getComponent(source)!));
+
         const measureGroups = this.getMeasureSets(circuit, subcircuit);
         for(const group of measureGroups) {
             const n = group.length;
@@ -213,8 +217,10 @@ class StatevectorSimlator extends Simulator {
                 results.push(this.simulateQuantumParts(circuit, subcircuit, dict));
             }
 
+            let measureBitIndex = 0;
             for(const measure of group) {
                 measure.setBuckets(results);
+                measure.setQubitIndex(measureBitIndex++);
             }
         }
 
@@ -225,15 +231,14 @@ class StatevectorSimlator extends Simulator {
         const groups: QuantumMeasureComponent[][] = [];
 
         for(let i = 1; i <= 3; i++) {
-            groups.push(subcircuit.filter<QuantumMeasureComponent>((component): component is QuantumMeasureComponent => (component instanceof QuantumMeasureComponent) && component.getMeasureGroup() == i));
+            groups.push(subcircuit.filter<QuantumMeasureComponent>((component): component is QuantumMeasureComponent => (component instanceof QuantumMeasureComponent) && component.getMeasureGroup() == i && component.getId() in this.qubitIndices)
+                .sort((x, y) => this.qubitIndices[x.getId()][0] - this.qubitIndices[y.getId()][0]));
         }
 
         return groups;
     }
 
     private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[], measureAssignments: { [key: number ]: number }): number {
-        this.initSources(subcircuit);
-
         for(const sub of subcircuit.filter((component) => component.getInputSockets().some((socket) => socket.isQuantum()) || component.getOutputSockets().some((socket) => socket.isQuantum()))) {
             sub.setUncomputed(true);
         }
@@ -241,8 +246,6 @@ class StatevectorSimlator extends Simulator {
 
         if(this.quantumSources.length == 0)
             return 0;
-
-        this.quantumSources.forEach((source) => this.initQubitIndices(circuit.getComponent(source)!));
 
 
         const quantumBandwidth = this.quantumSources.length;

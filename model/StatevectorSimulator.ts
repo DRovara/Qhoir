@@ -286,11 +286,7 @@ class StatevectorSimlator extends Simulator {
 
     public override simulate(circuit: Circuit): void {
         const subcircuits = circuit.getAllSubCircuits();
-        console.log("Got subcircuits");
         subcircuits.forEach((subcircuit) => this.simulateSubcircuit(circuit, subcircuit));
-        
-        console.log("Finished simulation");
-
     }
 
     private simulateSubcircuit(circuit: Circuit, subcircuit: CircuitComponent[]) {
@@ -388,9 +384,8 @@ class StatevectorSimlator extends Simulator {
 
 
                         if(measureAssignments.includes(layer[i] as QuantumMeasureComponent)) {
-                            const assignment = (assign & (1 << measureAssignments.indexOf(layer[i]! as QuantumMeasureComponent))) > 0 ? 1 : 0;
+                            const assignment = (assign & (1 << (measureAssignments.length - 1 -measureAssignments.indexOf(layer[i]! as QuantumMeasureComponent)))) > 0 ? 1 : 0;
                             totalZero = Math.abs(totalZero - assignment);
-                            console.log(totalZero);
                             state.updateProbability(totalZero, assign);
 
                             let measureUpdateObservable = math.zeros(2, 2) as math.Matrix;

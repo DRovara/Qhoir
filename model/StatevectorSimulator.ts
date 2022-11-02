@@ -273,7 +273,6 @@ class StatevectorSimlator extends Simulator {
                             continue
                         alreadyAdded.add(layer[i]!.getId());
                         const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
-
                         layerUnitary = math.multiply(layerUnitary, other);
                     }
                 }
@@ -295,24 +294,29 @@ class StatevectorSimlator extends Simulator {
                         }
                     }
 
+
                     if(Object.keys(measureAssignments).length == 0) {
                         (layer[i]! as QuantumMeasureComponent).setOneRate(1 - totalZero);
                     }
-                    
+
+
 
                     if(layer[i]!.getId() in measureAssignments) {
                         const assignment = measureAssignments[layer[i]!.getId()];
                         totalProbability *= Math.abs(totalZero - assignment);
+                        totalZero = Math.abs(totalZero - assignment);
 
                         let measureUpdateObservable = math.zeros(2, 2) as math.Matrix;
                         measureUpdateObservable.set([assignment, assignment], 1);
-                        measureUpdateObservable = math.multiply(measureUpdateObservable, 1/(totalProbability**0.5));
+                        measureUpdateObservable = math.multiply(measureUpdateObservable, 1/(totalZero**0.5));
                         const measureFullObservable = Utils.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
 
                         current = math.multiply(measureFullObservable, current);
                     }
                 }
             }
+
+
 
 
         }

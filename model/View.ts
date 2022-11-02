@@ -186,6 +186,14 @@ class View {
         this.height = this.canvas.height;
     }
 
+    public getWidth(): number {
+        return this.width;
+    }
+
+    public getHeight(): number {
+        return this.height;
+    }
+
     public getScrollX(): number {
         return this.scrollX;
     }

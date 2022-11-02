@@ -22,8 +22,6 @@ type EditorProps = {
 }
 
 type EditorState = {
-    mouseX: number;
-    mouseY: number;
     selectedComponent: number;
 }
 
@@ -39,9 +37,10 @@ class Editor extends Component<EditorProps, EditorState> {
     private undoStack: UIAction[] = [];
     private redoStack: UIAction[] = [];
 
+    private lastX: number = -1;
+    private lastY: number = -1;
+
     state: EditorState = {
-        mouseX: -1,
-        mouseY: -1,
         selectedComponent: -1
     }
 
@@ -50,17 +49,19 @@ class Editor extends Component<EditorProps, EditorState> {
         const clientX = ev.clientX - rect.x;
         const clientY = ev.clientY - rect.y;
 
-        this.dragging = this.view?.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
-        if(this.dragging?.getComponentId() == 30)
-            this.dragging = undefined;
-        if(this.dragging != undefined) {
-            this.draggingStart = [this.dragging.getX(), this.dragging.getY()];
+        if(ev.button == 0) {
+            this.dragging = this.view?.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
+            if(this.dragging?.getComponentId() == 30)
+                this.dragging = undefined;
+            if(this.dragging != undefined) {
+                this.draggingStart = [this.dragging.getX(), this.dragging.getY()];
+            }
         }
         this.setState((state) => ({
-            mouseX: -2,
-            mouseY: -2,
             selectedComponent: state.selectedComponent
         }));
+        this.lastX = -2;
+        this.lastY = -2;
     }
 
     mouseUp(ev: MouseEvent<HTMLCanvasElement>) {
@@ -74,8 +75,13 @@ class Editor extends Component<EditorProps, EditorState> {
         
         const clientX = newPosition[0];
         const clientY = newPosition[1];
+
+        const leftButton = ev.button == 0;
+        const rightButton = ev.button == 2;
+        const middleButton = ev.button == 1;
+
         
-        if (this.state.selectedComponent != -1) {
+        if (this.state.selectedComponent != -1 && leftButton) {
             if(this.state.selectedComponent != 30)
                 this.addComponent((clientX - 32) * window.devicePixelRatio - this.view?.getScrollX()!, (clientY - 32) * window.devicePixelRatio - this.view?.getScrollY()!, this.state.selectedComponent);
             else {
@@ -88,13 +94,13 @@ class Editor extends Component<EditorProps, EditorState> {
                     this.view.setPlacingArea(false);
                 }
             }
-        } else {
-            if (this.view?.clickedDetails(originalClientX * window.devicePixelRatio, originalClientY * window.devicePixelRatio)) {
+        } else if(leftButton || middleButton) {
+            if (leftButton && this.view?.clickedDetails(originalClientX * window.devicePixelRatio, originalClientY * window.devicePixelRatio)) { //Details only with left click
                 //NO-OP
             }
-            else if (this.props.utensils.current?.state.scroll) {
+            else if (this.props.utensils.current?.state.scroll || middleButton) {
                 const sockets = this.view?.socketsAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
-                if (sockets?.length! > 0) {
+                if (leftButton && sockets?.length! > 0) {
                     const previousSelect = this.view?.getSelectedSocket();
                     if(previousSelect == null)
                         this.view?.selectSocket(sockets![0]);
@@ -106,12 +112,24 @@ class Editor extends Component<EditorProps, EditorState> {
                     }
                 }
                 else {
-                    this.view?.selectSocket(null);
-                    if(!this.wasDragging)
+                    if(leftButton)
+                        this.view?.selectSocket(null);
+                    if(!this.wasDragging) {
                         this.view?.openDetails(this.view.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!), originalClientX, originalClientY);
+                        if(this.view?.getDetailsView() != null) {
+                            if(this.view?.getDetailsView()!.getX() + this.view?.getDetailsView()!.getWidth() > this.view?.getWidth()) {
+                                this.view.getDetailsView()!.setX(this.view.getWidth() - this.view.getDetailsView()!.getWidth());
+                                this.view.update();
+                            }
+                            if(this.view?.getDetailsView()!.getY() + this.view?.getDetailsView()!.getHeight() > this.view?.getHeight()) {
+                                this.view.getDetailsView()!.setY(this.view.getHeight() - this.view.getDetailsView()!.getHeight());
+                                this.view.update();
+                            }
+                        }
+                    }
                 }
             }
-            else {
+            else if(leftButton) {
                 const componentToRemove = this.view?.componentAt(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
                 if(componentToRemove != undefined) {
                     const action = new EraseComponentAction(componentToRemove);
@@ -128,10 +146,10 @@ class Editor extends Component<EditorProps, EditorState> {
         this.wasDragging = false;
 
         this.setState((state) => ({
-            mouseX: -1,
-            mouseY: -1,
             selectedComponent: state.selectedComponent
         }));
+        this.lastX = -1;
+        this.lastY = -1;
 
 
     }
@@ -160,48 +178,55 @@ class Editor extends Component<EditorProps, EditorState> {
         const clientX = newPosition[0];
         const clientY = newPosition[1];
 
+        const leftButton = (ev.buttons & 1) > 0;
+        const rightButton = (ev.buttons & 2) > 0;
+        const middleButton = (ev.buttons & 4) > 0;
+
 
 
 
         this.view?.moveMouse(clientX * window.devicePixelRatio - this.view?.getScrollX()!, clientY * window.devicePixelRatio - this.view?.getScrollY()!);
 
-        
-        if (ev.button != 0)
+        if (!leftButton && !middleButton)
             return;
 
-        if (this.state.mouseX == -1)
+        if (this.lastX == -1)
             return;
 
-        if (this.state.mouseX == -2) {
+        if (this.lastX == -2) {
             this.setState((state) => ({
-                mouseX: clientX,
-                mouseY: clientY,
                 selectedComponent: state.selectedComponent
             }))
+            this.lastX = clientX;
+            this.lastY = clientY;
             return;
         };
 
-        const dx = this.state.mouseX - clientX;
-        const dy = this.state.mouseY - clientY;
+        
+        const dx = this.lastX - clientX;
+        const dy = this.lastY - clientY;
 
 
-        if (this.props.utensils.current?.state.scroll && this.dragging == undefined)
+        if ((this.props.utensils.current?.state.scroll || middleButton) && this.dragging == undefined) {
             this.view?.scroll(dx, dy);
+            this.wasDragging = true;
+        }
         else if (this.props.utensils.current?.state.scroll) {
             if(this.props.utensils.current.state.snap) {
-                const snappedPos = this.doSnap(this.dragging!.getX(), this.dragging!.getY());
-                this.dragging?.setX(snappedPos[0]);
-                this.dragging?.setY(snappedPos[1]);
+                const snappedPos = this.doSnap(this.dragging!.getX() + 32 * window.devicePixelRatio, this.dragging!.getY() + 32 * window.devicePixelRatio);
+                this.dragging?.setX(snappedPos[0] - 32 * window.devicePixelRatio);
+                this.dragging?.setY(snappedPos[1] - 32 * window.devicePixelRatio);
             }
+            console.log(dx + " " + dy);
             this.dragging?.move(-dx * window.devicePixelRatio, -dy * window.devicePixelRatio);
             this.wasDragging = true;
         }
 
         this.setState((state) => ({
-            mouseX: clientX,
-            mouseY: clientY,
             selectedComponent: state.selectedComponent
         }));
+        this.lastX = clientX;
+        this.lastY = clientY;
 
         this.forceUpdate();
 
@@ -234,8 +259,6 @@ class Editor extends Component<EditorProps, EditorState> {
         this.view?.setPlacingArea(false);
         
         this.setState((state) => ({
-            mouseX: state.mouseX,
-            mouseY: state.mouseY,
             selectedComponent: id
         }));
         this.view?.setHeldComponent(id);

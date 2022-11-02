@@ -64,6 +64,14 @@ abstract class DetailsView {
         return this.y;
     }
 
+    public setX(x: number) {
+        this.x = x;
+    }
+
+    public setY(y: number) {
+        this.y = y;
+    }
+
     public getWidth(): number {
         return this.width;
     }

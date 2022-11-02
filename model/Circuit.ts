@@ -552,7 +552,8 @@ class QuantumSinkComponent extends CircuitComponent {
     }
 
     public override getUnitary(classicalInputs: boolean[], numQubits: number, qubitIndices: number[]): math.Matrix {
-        return math.identity(2, 2) as math.Matrix;
+        const size = 2**numQubits;
+        return math.identity(size, size) as math.Matrix;
     }
 }
 

@@ -79,12 +79,11 @@ class LRUCache {
         return undefined;
     }
 
-    public store(previous: math.Matrix, layer: (CircuitComponent | null)[], layerUnitary: math.Matrix, current: math.Matrix) {
+    public storeUnitary(layer: (CircuitComponent | null)[], layerUnitary: math.Matrix) {
         if(layer.some((component) => component != null && (component.getComponentId() == 25 || component.getComponentId() == 26 || component.getComponentId() == 1)))
             return;
         
         const encodingUnitary = this.encodeUnitary(layer);
-        const encodingResult = this.encodeResult(previous, layer);
 
         const unitaryIndex = this.addOrderUnitaries.indexOf(encodingUnitary);
         if(unitaryIndex != -1) {
@@ -97,8 +96,17 @@ class LRUCache {
             delete this.unitaryCache[rem];
         }
 
+        this.unitaryCache[encodingUnitary] = layerUnitary;
+    }
+
+    public storeResult(previous: math.Matrix, layer: (CircuitComponent | null)[], result: math.Matrix) {
+        if(layer.some((component) => component != null && (component.getComponentId() == 25 || component.getComponentId() == 26 || component.getComponentId() == 1)))
+            return;
+        
+        const encodingResult = this.encodeResult(previous, layer);
+
         const resultIndex = this.addOrderResults.indexOf(encodingResult);
-        if(unitaryIndex != -1) {
+        if(resultIndex != -1) {
             this.addOrderResults.splice(resultIndex, 1);
         }
         this.addOrderResults.push(encodingResult);
@@ -107,10 +115,104 @@ class LRUCache {
             delete this.resultCache[rem];
         }
 
-        this.unitaryCache[encodingUnitary] = layerUnitary;
-        this.resultCache[encodingResult] = current;
+        this.resultCache[encodingResult] = result;
         
     }
+}
+
+class StatevectorAssignments {
+
+    private vectors: math.Matrix[] = [];
+    private assignments: { [key: number]: number } = {};
+    private probabilities: number[] = [];
+    private nextAssignment = 1;
+
+    public constructor(size: number) {
+        this.vectors.push(math.matrix(new Array<number>(size).fill(0).map((entry) => [entry])));
+        this.vectors[0].set([0, 0], 1);
+        this.probabilities.push(1);
+    }
+
+    public multiplyAll(unitary: math.Matrix, layer: (CircuitComponent | null)[], cache: LRUCache): void {
+        for(let i = 0; i < this.vectors.length; i++) {
+            const before = this.vectors[i];
+            let result = cache.getResult(before, layer);
+            if(result == undefined)
+                result = math.multiply(unitary, before);
+            this.vectors[i] = result;
+            cache.storeResult(before, layer, result);
+        }
+    }
+
+    public multiply(unitary: math.Matrix, assignment: number, layer: (CircuitComponent | null)[] = [], cache: LRUCache | undefined = undefined): void {
+        if(assignment in this.assignments) {
+            const before = this.vectors[this.assignments[assignment]];
+            let result = cache?.getResult(before, layer);
+            if(result == undefined)
+                result = math.multiply(unitary, before);
+            this.vectors[this.assignments[assignment]] = result;
+            if(cache != undefined)
+                cache.storeResult(before, layer, result);
+        }
+        else {
+            const next = this.nextAssignment++;
+
+            const before = this.vectors[0];
+            let result = cache?.getResult(before, layer);
+            if(result == undefined)
+                result = math.multiply(unitary, before);
+            this.vectors[this.assignments[assignment]] = result;
+            if(cache != undefined)
+                cache.storeResult(before, layer, result);
+
+            this.vectors.push(result);
+            this.assignments[assignment] = next;  
+            this.probabilities.push(1);
+        }
+    }
+
+    public get(index: number, assignment: number): number {
+        if(assignment in this.assignments) {
+            return this.vectors[this.assignments[assignment]].get([index, 0]);
+        }
+        return this.vectors[0].get([index, 0]);
+    }
+
+    public getVector(assignment: number): math.Matrix {
+        if(assignment in this.assignments)
+            return this.vectors[this.assignments[assignment]];
+        return this.vectors[0];
+    }
+
+    public getVectorsAndIndices(): [number, math.Matrix][] {
+        return this.vectors.map<[number, math.Matrix]>((vec, i) => [i, vec]);
+    }
+
+    public updateProbability(prob: number, assignment: number): void {
+        if(assignment in this.assignments) {
+            this.probabilities[this.assignments[assignment]] *= prob;
+        }
+        else {
+            const next = this.nextAssignment++;
+            this.vectors.push(this.vectors[0]);
+            this.assignments[assignment] = next;  
+            this.probabilities.push(prob);
+        }
+    }
+
+    public getProbabilities(entries: number): number[] {
+        const result: number[] = [];
+        for(let i = 0; i < 2**entries; i++) {
+            if(i in this.assignments) {
+                result.push(this.probabilities[this.assignments[i]])
+            }
+            else {
+                result.push(this.probabilities[0]);
+            }
+        }
+        return result;
+    }
+
 }
 
 class StatevectorSimlator extends Simulator {
@@ -206,16 +308,7 @@ class StatevectorSimlator extends Simulator {
             const n = group.length;
             if(n == 0)
                 continue;
-            const dict: { [key: number ]: number } = {};
-            const results: number[] = [];
-            for(let i = 0; i < 2**n; i++) {
-                let bin = i;
-                for(let j = n - 1; j >= 0; j--) {
-                    dict[group[j].getId()] = bin % 2;
-                    bin = bin >> 1;
-                }
-                results.push(this.simulateQuantumParts(circuit, subcircuit, dict));
-            }
+            const results = this.simulateQuantumParts(circuit, subcircuit, group);
 
             let measureBitIndex = 0;
             for(const measure of group) {
@@ -224,7 +317,7 @@ class StatevectorSimlator extends Simulator {
             }
         }
 
-        this.simulateQuantumParts(circuit, subcircuit, {});
+        this.simulateQuantumParts(circuit, subcircuit, []);
     }
 
     private getMeasureSets(circuit: Circuit, subcircuit: CircuitComponent[]): QuantumMeasureComponent[][] {
@@ -238,14 +331,14 @@ class StatevectorSimlator extends Simulator {
         return groups;
     }
 
-    private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[], measureAssignments: { [key: number ]: number }): number {
+    private simulateQuantumParts(circuit: Circuit, subcircuit: CircuitComponent[], measureAssignments: QuantumMeasureComponent[]): number[] {
         for(const sub of subcircuit.filter((component) => component.getInputSockets().some((socket) => socket.isQuantum()) || component.getOutputSockets().some((socket) => socket.isQuantum()))) {
             sub.setUncomputed(true);
         }
 
 
         if(this.quantumSources.length == 0)
-            return 0;
+            return [];
 
 
         const quantumBandwidth = this.quantumSources.length;
@@ -253,78 +346,66 @@ class StatevectorSimlator extends Simulator {
 
         const layers = this.layerize(circuit, subcircuit, quantumBandwidth);
 
-        let current = math.matrix(new Array<number>(matrixSize).fill(0).map((entry) => [entry]));
-        current.set([0, 0], 1);
-
-        let totalProbability = 1;
+        let state = new StatevectorAssignments(matrixSize);
 
         for(const layer of layers) {
-            const previous = current;
-            const result = this.cache.getResult(current, layer);
-
             let layerUnitary: math.Matrix | undefined = this.cache.getUnitary(layer);
-            if(result != undefined) {
-                current = result;
-            }
-            else {
-                if(layerUnitary == undefined) {
-                    layerUnitary = math.identity(matrixSize, matrixSize) as math.Matrix;
-                    const alreadyAdded = new Set<number>();
+            if(layerUnitary == undefined) {
+                layerUnitary = math.identity(matrixSize, matrixSize) as math.Matrix;
+                const alreadyAdded = new Set<number>();
 
-                    for(let i = 0; i < layer.length; i++) {
-                        if(layer[i] == null || alreadyAdded.has(layer[i]!.getId()))
-                            continue
-                        alreadyAdded.add(layer[i]!.getId());
-                        const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
-                        layerUnitary = math.multiply(layerUnitary, other);
-                    }
+                for(let i = 0; i < layer.length; i++) {
+                    if(layer[i] == null || alreadyAdded.has(layer[i]!.getId()))
+                        continue
+                    alreadyAdded.add(layer[i]!.getId());
+                    const other = layer[i]!.getUnitary([], quantumBandwidth, layer[i]!.getOutputSockets().map((socket) => this.qubitIndices[layer[i]!.getId()][socket.getSocketIndex()]));
+                    layerUnitary = math.multiply(layerUnitary, other);
                 }
-                current = math.multiply(layerUnitary, current);
             }
 
-            this.cache.store(previous, layer, layerUnitary!, current);
+            state.multiplyAll(layerUnitary, layer, this.cache);
+        
+            this.cache.storeUnitary(layer, layerUnitary!);
+
+            for(let assign = 0; assign < 2**measureAssignments.length; assign++) {
+                for(let i = 0; i < layer.length; i++) {
+                    if(layer[i] instanceof QuantumMeasureComponent) {
+                        const stepSize = 2**(quantumBandwidth - i - 1);
+
+                        let totalZero = 0;
+                        for(let j = 0; j < matrixSize; j += 2*stepSize) {
+                            for(let k = 0; k < stepSize; k++) {
+                                const value = state.get(j + k, assign);
+                                totalZero += math.multiply(math.abs(value), math.abs(value));
+                            }
+                        }
 
 
-            for(let i = 0; i < layer.length; i++) {
-                if(layer[i] instanceof QuantumMeasureComponent) {
-                    const stepSize = 2**(quantumBandwidth - i - 1);
+                        if(measureAssignments.length == 0) {
+                            (layer[i]! as QuantumMeasureComponent).setOneRate(1 - totalZero);
+                        }
 
-                    let totalZero = 0;
-                    for(let j = 0; j < matrixSize; j += 2*stepSize) {
-                        for(let k = 0; k < stepSize; k++) {
-                            const value = current.get([j + k, 0]);
-                            totalZero += math.multiply(math.abs(value), math.abs(value));
+
+
+                        if(measureAssignments.includes(layer[i] as QuantumMeasureComponent)) {
+                            const assignment = (assign & (1 << measureAssignments.indexOf(layer[i]! as QuantumMeasureComponent))) > 0 ? 1 : 0;
+                            totalZero = Math.abs(totalZero - assignment);
+                            console.log(totalZero);
+                            state.updateProbability(totalZero, assign);
+
+                            let measureUpdateObservable = math.zeros(2, 2) as math.Matrix;
+                            measureUpdateObservable.set([assignment, assignment], 1);
+                            measureUpdateObservable = math.multiply(measureUpdateObservable, 1/(totalZero**0.5));
+                            const measureFullObservable = Utils.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
+
+                            state.multiply(measureFullObservable, assign);
                         }
                     }
-
-
-                    if(Object.keys(measureAssignments).length == 0) {
-                        (layer[i]! as QuantumMeasureComponent).setOneRate(1 - totalZero);
-                    }
-
-
-
-                    if(layer[i]!.getId() in measureAssignments) {
-                        const assignment = measureAssignments[layer[i]!.getId()];
-                        totalProbability *= Math.abs(totalZero - assignment);
-                        totalZero = Math.abs(totalZero - assignment);
-
-                        let measureUpdateObservable = math.zeros(2, 2) as math.Matrix;
-                        measureUpdateObservable.set([assignment, assignment], 1);
-                        measureUpdateObservable = math.multiply(measureUpdateObservable, 1/(totalZero**0.5));
-                        const measureFullObservable = Utils.tensorPad(i, quantumBandwidth - i - 1, measureUpdateObservable);
-
-                        current = math.multiply(measureFullObservable, current);
-                    }
                 }
             }
-
-
-
-
         }
 
-        return totalProbability;
+        return state.getProbabilities(measureAssignments.length);
 
     }
 

@@ -116,27 +116,30 @@ class View {
 
     private drawHUD(): void {
 
-        const xPos = this.width - 10 - this.width / 20;
+        this.context.font = "25px Courier";
+        this.context.textBaseline = "top";
+        const maxWidth = this.context.measureText("x: -999").width;
+        const boxWidth = Math.max(maxWidth + 10, this.width / 20);
+        const boxHeight = 35;
+        const xPos = this.width - 10 - boxWidth;
 
         //X Coordinate
         this.context.fillStyle = "#00000022";
-        this.context.fillRect(xPos - 2, 8, this.width / 20 + 4, this.width / 200 * 4 + 4);
+        this.context.fillRect(xPos - 2, 8, boxWidth + 4, boxHeight + 4);
         this.context.fillStyle = "#FFFEF2";
-        this.context.fillRect(xPos, 10, this.width / 20, this.width / 200 * 4);
+        this.context.fillRect(xPos, 10, boxWidth, boxHeight);
         this.context.fillStyle = "#000000";
-        this.context.font = "25px Courier";
-        this.context.textBaseline = "top";
         this.context.fillText("x: " + this.scrollX*-1, xPos + 5, 15);
 
         //Y Coordinate
         this.context.fillStyle = "#00000022";
-        this.context.fillRect(xPos - 2, 10 + 3 + this.width / 200 * 4 + 4, this.width / 20 + 4, this.width / 200 * 4 + 4);
+        this.context.fillRect(xPos - 2, 10 + 3 + boxHeight + 4, boxWidth + 4, boxHeight + 4);
         this.context.fillStyle = "#FFFEF2";
-        this.context.fillRect(xPos, 10 + 5 + this.width / 200 * 4 + 4, this.width / 20, this.width / 200 * 4);
+        this.context.fillRect(xPos, 10 + 5 + boxHeight + 4, boxWidth, boxHeight);
         this.context.fillStyle = "#000000";
         this.context.font = "25px Courier";
         this.context.textBaseline = "top";
-        this.context.fillText("y: " + this.scrollY*-1, xPos + 5, 15 + 5 + this.width / 200 * 4 + 4);
+        this.context.fillText("y: " + this.scrollY*-1, xPos + 5, 15 + 5 + boxHeight + 4);
 
         //Held component
         if(this.heldComponent < 0)

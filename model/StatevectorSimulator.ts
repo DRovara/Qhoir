@@ -297,6 +297,7 @@ class StatevectorSimlator extends Simulator {
 
         this.initSources(subcircuit);
 
+        
         this.quantumSources.forEach((source) => this.initQubitIndices(circuit.getComponent(source)!));
 
         const measureGroups = this.getMeasureSets(circuit, subcircuit);
@@ -360,7 +361,7 @@ class StatevectorSimlator extends Simulator {
             }
 
             state.multiplyAll(layerUnitary, layer, this.cache);
-        
+
             this.cache.storeUnitary(layer, layerUnitary!);
 
             for(let assign = 0; assign < 2**measureAssignments.length; assign++) {

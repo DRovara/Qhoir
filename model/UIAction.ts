@@ -120,10 +120,15 @@ class PlaceWireAction extends UIAction {
     private from: Socket;
     private to: Socket;
 
-    public constructor(from: Socket, to: Socket) {
+    private previous_from_to: Socket | undefined;
+    private previous_to_from: Socket | undefined;
+
+    public constructor(from: Socket, to: Socket, previous_from_to: Socket | undefined, previous_to_from: Socket | undefined) {
         super(3);
         this.from = from;
         this.to = to;
+        this.previous_from_to = previous_from_to;
+        this.previous_to_from = previous_to_from;
     }
 
     protected override redo(view: View): void {
@@ -131,7 +136,11 @@ class PlaceWireAction extends UIAction {
     }
 
     protected override undo(view: View): void {
-        view.getCircuit().unwireSocket(this.from);
+        view.getCircuit().unwireSocket(this.to);
+        if(this.previous_from_to != undefined)
+            view.getCircuit().wireSockets(this.from, this.previous_from_to);
+        if(this.previous_to_from != undefined)
+            view.getCircuit().wireSockets(this.to, this.previous_to_from);
     }
 }
 

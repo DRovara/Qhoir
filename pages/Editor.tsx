@@ -73,6 +73,7 @@ class Editor extends Component<EditorProps, EditorState> {
         
         const newPosition = this.doSnap(originalClientX, originalClientY);
         
+
         const clientX = newPosition[0];
         const clientY = newPosition[1];
 
@@ -83,7 +84,7 @@ class Editor extends Component<EditorProps, EditorState> {
         
         if (this.state.selectedComponent != -1 && leftButton) {
             if(this.state.selectedComponent != 30)
-                this.addComponent((clientX - 32) * window.devicePixelRatio - this.view?.getScrollX()!, (clientY - 32) * window.devicePixelRatio - this.view?.getScrollY()!, this.state.selectedComponent);
+                this.addComponent(clientX * window.devicePixelRatio - 32 - this.view?.getScrollX()!, clientY * window.devicePixelRatio - 32 - this.view?.getScrollY()!, this.state.selectedComponent);
             else {
                 if(!this.view?.isPlacingArea()) {
                     this.view?.setPlacingArea(true);
@@ -105,7 +106,7 @@ class Editor extends Component<EditorProps, EditorState> {
                     if(previousSelect == null)
                         this.view?.selectSocket(sockets![0]);
                     else {
-                        const action = new PlaceWireAction(previousSelect, sockets![0]);
+                        const action = new PlaceWireAction(previousSelect, sockets![0], previousSelect.getConnectedSocket(), sockets![0].getConnectedSocket());
                         action.doRedo(this.view!);
                         this.addAction(action);
                         this.view?.selectSocket(null);
@@ -160,8 +161,15 @@ class Editor extends Component<EditorProps, EditorState> {
             const trueX = x * window.devicePixelRatio - this.view?.getScrollX()!;
             const trueY = y * window.devicePixelRatio - this.view?.getScrollY()!;
             
-            x -= trueX % 22.5;
-            y -= trueY % 22.5;
+            let mod = trueX;
+            while(mod > 22.4999)
+            mod -= 22.5;
+            x -= mod / window.devicePixelRatio;
+
+            mod = trueY;
+            while(mod > 22.4999)
+                mod -= 22.5;
+            y -= mod / window.devicePixelRatio;
         }
 
         return [x, y]
@@ -213,9 +221,10 @@ class Editor extends Component<EditorProps, EditorState> {
         }
         else if (this.props.utensils.current?.state.scroll) {
             if(this.props.utensils.current.state.snap) {
-                const snappedPos = this.doSnap(this.dragging!.getX() + 32 * window.devicePixelRatio, this.dragging!.getY() + 32 * window.devicePixelRatio);
-                this.dragging?.setX(snappedPos[0] - 32 * window.devicePixelRatio);
-                this.dragging?.setY(snappedPos[1] - 32 * window.devicePixelRatio);
+                const prevPos = [(this.dragging!.getX() + 32) / window.devicePixelRatio, (this.dragging!.getY() + 32) / window.devicePixelRatio]
+                const snappedPos = this.doSnap(prevPos[0], prevPos[1]);
+                this.dragging?.setX(this.dragging?.getX() - (prevPos[0] - snappedPos[0]));
+                this.dragging?.setY(this.dragging?.getY() - (prevPos[1] - snappedPos[1]));
             }
             this.dragging?.move(-dx * window.devicePixelRatio, -dy * window.devicePixelRatio);
             this.wasDragging = true;

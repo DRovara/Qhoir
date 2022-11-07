@@ -179,11 +179,6 @@ class View {
         this.context.fillRect(0, 0, this.width, this.height);
     }
 
-    private drawBorder(): void {
-        this.context.strokeStyle = "#000000";
-        this.context.strokeRect(0, 0, this.width, this.height);
-    }
-
     private getSizes(): void {
         this.width = this.canvas.width;
         this.height = this.canvas.height;

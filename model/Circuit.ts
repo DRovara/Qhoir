@@ -1746,6 +1746,10 @@ class Circuit {
             }
         }
 
+        for(let i = 0; i < result.length; i++) {
+            result[i].sort((a, b) => a.getId() - b.getId());
+        }
+
         return result;
     }
 

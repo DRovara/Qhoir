@@ -1,6 +1,6 @@
 <h1>Qhoir Documentation</h1>
 
-This document introduces the core features and components of Qhoir. It assumes some basic knowledge on classical circuit construction, as well as the knowledge of quantum information basics from the reader. Other than that, the reader is not required to have a more profound understanding of quantum computing. Instead, Qhoir values the process of *learning by doing*.
+This document introduces the core features and components of Qhoir. It assumes some basic knowledge of classical circuit construction, as well as the knowledge of quantum information basics from the reader. Other than that, the reader is not required to have a more profound understanding of quantum computing. Instead, Qhoir values the process of *learning by doing*.
 
 # Interface
 
@@ -15,14 +15,14 @@ The utensil bar at the top of the interface provides several utensils to interac
 
 Finally, the toolbox contains all components that can be used in Qhoir. You can minimize it by pressing the white rectangle on its right.
 
-In the following, we will go into more detail on each of these components, and their elements.
+In the following, we will go into more detail on each of these components and their elements.
 
 # Breadboard
 The breadboard is visualized as a grid, where each cell represents a unit size of 1. By dragging your mouse over the editor while holding the left button (while the <a href="#Scroll">scroll tool</a> is selected), you may scroll through the breadboard. On the top right, you see the coordinates of the part of the breadboard you are currently viewing.
 
 <a href="#Components">Components</a> can be added to the circuit by selecting them from the toolbox. While holding a component, a transparent drawing of it will be shown at your current mouse position. If the component cannot be placed, because this part of the circuit is already occupied, it will be indicated by a red highlight.
 
-Some components can be clicked in the breadboard to open up their _details view_. In this view, more specific changed can be made to the component, and it may also contain further analytical information. More information on details views can be found in the <a href="#Components">section on components</a>.
+Some components can be clicked on the breadboard to open up their _details view_. In this view, more specific changes can be made to the component, and it may also contain further analytical information. More information on details views can be found in the <a href="#Components">section on components</a>.
 
 Clicking and dragging a placed component allows users to relocate the components to different positions. 
 
@@ -32,7 +32,7 @@ Sockets are indicated in the breadboard by circles at the socket's location. Inp
 
 Simulation is performed automatically after each step if the simulator is not <a href="#Pause">paused</a>. Measurement results gathered during the simulation are indicated by measurement components directly in the circuit view. You may also click measurement components to open their details view for more information on the results.
 
-Many classical circuit editing tools provide the functionality of "splitting" wires along their path to send the information of the current bit two multiple components. Due to the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no cloning theorem</a>, creating such copies of qubits is not possible. Therefore, Qhoir generally does not support the splitting of wires directly. For classical bits, however, Qhoir provides the <a href="#Fork">Fork</a> component that has the same functionality. 
+Many classical circuit editing tools provide the functionality of "splitting" wires along their path to send the information of the current bit to multiple components. Due to the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no-cloning theorem</a>, creating such copies of qubits is not possible. Therefore, Qhoir generally does not support the splitting of wires directly. For classical bits, however, Qhoir provides the <a href="#Fork">Fork</a> component that has the same functionality. 
 
 
 # Utensils
@@ -48,7 +48,7 @@ The scroll tool is the default tool which is automatically selected if no other 
 Picking a component from the toolbar deactivates the scroll tool.
 
 ## Eraser
-The eraser can be used to remove existing components from the circuit. In doing so, all the component's details view modifications, as well as its connected wires are lost as well.
+The eraser can be used to remove existing components from the circuit. In doing so, all the component's details view modifications, as well as its connected wires, are lost as well.
 
 While the eraser is active, moving the mouse over a component in the circuit will highlight it in a red tone.
 
@@ -67,7 +67,7 @@ Please note that undo and redo only affect modifications made to the grid direct
 Undo / redo can be called using the shortcuts `ctrl + z` and `ctrl + y` respectively.
 
 ## Save / Load
-The save utensil downloads a json encoding of the current circuit to your device.
+The save utensil downloads a JSON encoding of the current circuit to your device.
 
 The load component allows users to upload such circuit encodings to the editor and loads them into the workspace.
 
@@ -97,7 +97,7 @@ Qhoir distinguishes _classical_ and _quantum_ components. Therefore, a distincti
 
 ## Classical Gates
 
-Classical gates represent circuit components that only require classical bits for their computation. As they do not need to be included in the statevector simulator with exponential blow-up, even large numbers of classical gates and bits can be supported and calculated in real-time.
+Classical gates represent circuit components that only require classical bits for their computation. As they do not need to be included in the statevector simulator with exponential blow-up, even large numbers of classical gates and bits can be supported and calculated in real time.
 
 In principle, most classical gates supported by Qhoir implement the default logical operations of boolean algebra.
 
@@ -120,7 +120,7 @@ The most commonly used and basic single-qubit gates are the three Pauli gates: X
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
 |<img src="../../public/components/x.png" />|X Gate|The Pauli X gate is the quantum version of the NOT gate. <br>$\alpha \| 0\rangle + \beta \| 1\rangle \Rightarrow \alpha \| 1\rangle + \beta \| 0\rangle$|/|
-|<img src="../../public/components/y.png" />|Y Gate|The Pauli Y gate combines the X and Z gates and futher adds a factor of "i" to the qubit: <br>$\alpha \| 0\rangle + \beta \| 1\rangle \Rightarrow ai\| 1\rangle - bi\| 0\rangle$|/|
+|<img src="../../public/components/y.png" />|Y Gate|The Pauli Y gate combines the X and Z gates and further adds a factor of "i" to the qubit: <br>$\alpha \| 0\rangle + \beta \| 1\rangle \Rightarrow ai\| 1\rangle - bi\| 0\rangle$|/|
 |<img src="../../public/components/z.png" />|Z Gate|The Pauli Z gate represents a negative phase shift to the $\| 1\rangle$ state while leaving the $\| 0\rangle$ state unchanged: <br>$\alpha \| 0\rangle + \beta \| 1\rangle \Rightarrow \alpha \| 0\rangle - \beta \| 1\rangle$|/|
 
 
@@ -132,7 +132,7 @@ Another important single-qubit gate is the <em>Hadamard</em> gate:
 |<img src="../../public/components/h.png" />|Hadamard|Creates an equal superposition from a state in the computational basis: <br> $\alpha\| 0⟩ + \beta\| 1⟩ \Rightarrow \alpha\| +⟩ - \beta\|-⟩$<br> $\|+⟩ = \frac{\| 0⟩ + \| 1⟩}{\sqrt{2}}$,<br>$\|-⟩ = \frac{\| 0⟩ - \| 1⟩}{\sqrt{2}}$|/|
 
 
-Finally, Qhoir supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta$). These gates all leave the state $|0\rangle$ untouched, while transforming the state $|1\rangle$ with a given phase shift.
+Finally, Qhoir supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta$). These gates all leave the state $|0\rangle$ untouched while transforming the state $|1\rangle$ with a given phase shift.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -143,14 +143,14 @@ Finally, Qhoir supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta
 ## Multi-Qubit Gates
 Multi-Qubit Gates take multiple qubits as inputs. Unlike classical gates, quantum gates must be _reversible_. This means that the number of input and output qubits for a quantum gate must always be equal.
 
-The most common types of two-qubit gates are _controlled_ gates. These gates take two qubits as input, a control qubit and a target qubit. It then performs a given action on the target qubit if the control qubit is equal to $|1\rangle$. Otherwise, it keeps the target unchanged. If the control qubit is in a super position, the gate is only applied partially to the target, with a factor determined by the coefficient of $|1\rangle$ in the control qubit.
+The most common types of two-qubit gates are _controlled_ gates. These gates take two qubits as input, a control qubit and a target qubit. It then performs a given action on the target qubit if the control qubit is equal to $|1\rangle$. Otherwise, it keeps the target unchanged. If the control qubit is in a superposition, the gate is only applied partially to the target, with a factor determined by the coefficient of $|1\rangle$ in the control qubit.
 
 For instance, the _CX_ or _CNOT_ gate performs the X gate on a target qubit. The transformation rules for it are:
 $|00\rangle \rightarrow |00\rangle$, $|01\rangle \rightarrow |01\rangle$, $|10\rangle \rightarrow |11\rangle$, $|11\rangle \rightarrow |10\rangle$ \
 if the leftmost qubit is the control, or more general:
 $$\alpha|00\rangle + \beta|01\rangle + \gamma|10\rangle + \delta|11\rangle \rightarrow \alpha|00\rangle + \beta|01\rangle + \gamma|11\rangle + \delta|10\rangle $$
 
-In Qhoir, controlled gates are indicated by a black bar at the top. The control qubit is given through the input socket at the very top, and corresponds to the topmost output socket. The following controlled two-qubit gates are available:
+In Qhoir, controlled gates are indicated by a black bar at the top. The control qubit is given through the input socket at the very top and corresponds to the topmost output socket. The following controlled two-qubit gates are available:
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -163,9 +163,9 @@ In Qhoir, controlled gates are indicated by a black bar at the top. The control 
 |<img src="../../public/components/cr.png" />|CR<sub>z</sub>($\theta$) Gate|Applies the R<sub>z</sub>($\theta$) gate to qubit 2 (left input) if the control (top input) is $\|1\rangle$|Select a value of theta as a linear combination of $π$ and 1 by clicking the input fields and typing the values. The view on the left shows the angle $\theta$ on the unit circle.|
 <br>
 
-Controlled gates are not limited just one control qubit. Generally in quantum computing, controlled gates may have any number of control qubits, and are expected to perform their action on the target qubit if and only if **ALL** controls are in the state $|1\rangle$. 
+Controlled gates are not limited to just one control qubit. Generally, in quantum computing, controlled gates may have any number of control qubits, and are expected to perform their action on the target qubit if and only if **ALL** controls are in the state $|1\rangle$. 
 
-Qhoir supports the _CCX_ or _CCNOT_ gate, also known as _Toffoli gate_, which applies the Pauli X gate if both inputs (passed through the two topmost input sockets) are equal to $|1\rangle$. The three output sockets correspond to the left and right control qubits and to the action qubit in order.
+Qhoir supports the _CCX_ or _CCNOT_ gate, also known as the _Toffoli gate_, which applies the Pauli X gate if both inputs (passed through the two topmost input sockets) are equal to $|1\rangle$. The three output sockets correspond to the left and right control qubits and to the action qubit in order.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|

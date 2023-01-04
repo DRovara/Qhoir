@@ -38,7 +38,7 @@
     quantum circuit editing tool
     <br />
     <br />
-    <a href="https://github.com/DRovara/Qhoir/doc/getting-started">Getting Started</a>
+    <a href="https://github.com/DRovara/Qhoir/tree/main/doc/getting-started">Getting Started</a>
     ·
     <a href="https://github.com/DRovara/Qhoir/issues">Report Bug</a>
     ·

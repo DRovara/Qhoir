@@ -15,6 +15,11 @@ const Home: NextPage = () => {
 
   return (
     <div id="container">
+      <Head>
+        <title>Qhoir</title>
+        <meta name="description" content="A quantum circuit editor." />
+        <link rel="icon" href="/favicon.png" />
+      </Head>
       <UtensilBar ref={utensilBar} editor={editor} toolbox={toolbox}></UtensilBar>
       <div className={styles.contents}>
         <Editor ref={editor} utensils={utensilBar}/>

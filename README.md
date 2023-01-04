@@ -29,7 +29,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-
+<a href="https://github.com/DRovara/qwire">
+    <img src="public/favicon.png" alt="Logo" width="64" height="64">
+</a>
 <h3 align="center">qwire</h3>
 
   <p align="center">

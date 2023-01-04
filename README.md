@@ -29,7 +29,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<a href="https://github.com/DRovara/qwire">
+<a href="https://github.com/DRovara/Qhoir">
     <img src="public/favicon.png" alt="Logo" width="64" height="64">
 </a>
 <h3 align="center">Qhoir</h3>
@@ -38,11 +38,11 @@
     quantum circuit editing tool
     <br />
     <br />
-    <a href="https://github.com/DRovara/qwire/doc/getting-started">Getting Started</a>
+    <a href="https://github.com/DRovara/Qhoir/doc/getting-started">Getting Started</a>
     ·
-    <a href="https://github.com/DRovara/qwire/issues">Report Bug</a>
+    <a href="https://github.com/DRovara/Qhoir/issues">Report Bug</a>
     ·
-    <a href="https://github.com/DRovara/qwire/issues">Request Feature</a>
+    <a href="https://github.com/DRovara/Qhoir/issues">Request Feature</a>
   </p>
 </div>
 
@@ -119,7 +119,7 @@ This project runs on a node.js backend. If you haven't already, please install `
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/DRovara/qwire.git
+   git clone https://github.com/DRovara/Qhoir.git
    ```
 2. Install NPM packages
    ```sh
@@ -220,7 +220,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwire)
+Project Link: [https://github.com/DRovara/Qhoir](https://github.com/DRovara/Qhoir)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -240,16 +240,16 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/DRovara/qwire.svg?style=for-the-badge
-[contributors-url]: https://github.com/DRovara/qwire/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/DRovara/qwire.svg?style=for-the-badge
-[forks-url]: https://github.com/DRovara/qwire/network/members
-[stars-shield]: https://img.shields.io/github/stars/DRovara/qwire.svg?style=for-the-badge
-[stars-url]: https://github.com/DRovara/qwire/stargazers
-[issues-shield]: https://img.shields.io/github/issues/DRovara/qwire.svg?style=for-the-badge
-[issues-url]: https://github.com/DRovara/qwire/issues
-[license-shield]: https://img.shields.io/github/license/DRovara/qwire.svg?style=for-the-badge
-[license-url]: https://github.com/DRovara/qwire/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/DRovara/Qhoir.svg?style=for-the-badge
+[contributors-url]: https://github.com/DRovara/Qhoir/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/DRovara/Qhoir.svg?style=for-the-badge
+[forks-url]: https://github.com/DRovara/Qhoir/network/members
+[stars-shield]: https://img.shields.io/github/stars/DRovara/Qhoir.svg?style=for-the-badge
+[stars-url]: https://github.com/DRovara/Qhoir/stargazers
+[issues-shield]: https://img.shields.io/github/issues/DRovara/Qhoir.svg?style=for-the-badge
+[issues-url]: https://github.com/DRovara/Qhoir/issues
+[license-shield]: https://img.shields.io/github/license/DRovara/Qhoir.svg?style=for-the-badge
+[license-url]: https://github.com/DRovara/Qhoir/blob/master/LICENSE.txt
 
 <!-- Screenshots -->
 [screenshot-bell-state-full]: images/bell-state-tool.png

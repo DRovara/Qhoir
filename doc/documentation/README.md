@@ -1,10 +1,10 @@
-<h1>qwire Documentation</h1>
+<h1>Qhoir Documentation</h1>
 
-This document introduces the core features and components of qwire. It assumes some basic knowledge on classical circuit construction, as well as the knowledge of quantum information basics from the reader. Other than that, the reader is not required to have a more profound understanding of quantum computing. Instead, qwire values the process of *learning by doing*.
+This document introduces the core features and components of Qhoir. It assumes some basic knowledge on classical circuit construction, as well as the knowledge of quantum information basics from the reader. Other than that, the reader is not required to have a more profound understanding of quantum computing. Instead, Qhoir values the process of *learning by doing*.
 
 # Interface
 
-The quantum circuit editor qwire consists of three main components:
+The quantum circuit editor Qhoir consists of three main components:
 - Breadboard
 - Utensil bal
 - Toolbox
@@ -13,7 +13,7 @@ The breadboard is the main component of the editor. It allows you to construct c
 
 The utensil bar at the top of the interface provides several utensils to interact with your constructed circuit.
 
-Finally, the toolbox contains all components that can be used in qwire. You can minimize it by pressing the white rectangle on its right.
+Finally, the toolbox contains all components that can be used in Qhoir. You can minimize it by pressing the white rectangle on its right.
 
 In the following, we will go into more detail on each of these components, and their elements.
 
@@ -32,7 +32,7 @@ Sockets are indicated in the breadboard by circles at the socket's location. Inp
 
 Simulation is performed automatically after each step if the simulator is not <a href="#Pause">paused</a>. Measurement results gathered during the simulation are indicated by measurement components directly in the circuit view. You may also click measurement components to open their details view for more information on the results.
 
-Many classical circuit editing tools provide the functionality of "splitting" wires along their path to send the information of the current bit two multiple components. Due to the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no cloning theorem</a>, creating such copies of qubits is not possible. Therefore, qwire generally does not support the splitting of wires directly. For classical bits, however, qwire provides the <a href="#Fork">Fork</a> component that has the same functionality. 
+Many classical circuit editing tools provide the functionality of "splitting" wires along their path to send the information of the current bit two multiple components. Due to the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no cloning theorem</a>, creating such copies of qubits is not possible. Therefore, Qhoir generally does not support the splitting of wires directly. For classical bits, however, Qhoir provides the <a href="#Fork">Fork</a> component that has the same functionality. 
 
 
 # Utensils
@@ -73,7 +73,7 @@ The load component allows users to upload such circuit encodings to the editor a
 
 <a name="Pause"></a>
 ## Play / Pause
-The play / pause button is located on the very right of the utensil bar. It can be used to activate / deactivate qwire's statevector simulator. While the simulator is active, a simulation is run after each change made to the circuit.
+The play / pause button is located on the very right of the utensil bar. It can be used to activate / deactivate Qhoir's statevector simulator. While the simulator is active, a simulation is run after each change made to the circuit.
 
 Pausing the simulator will prevent such simulation runs. Please keep in mind that measurement results will not update while the simulator is paused.
 
@@ -86,7 +86,7 @@ For a more rigorous introduction to quantum computing, please visit <a href="htt
 ## Tools
 Tools represent the most basic components that are required to construct (meaningful) circuits: _Sources_ and _Measurements_. Each circuit requires at least one source component to be run.
 
-Qwire distinguishes _classical_ and _quantum_ components. Therefore, a distinction between _classical_ and _quantum_ sources and measurements also has to be made to construct such circuits.
+Qhoir distinguishes _classical_ and _quantum_ components. Therefore, a distinction between _classical_ and _quantum_ sources and measurements also has to be made to construct such circuits.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -99,7 +99,7 @@ Qwire distinguishes _classical_ and _quantum_ components. Therefore, a distincti
 
 Classical gates represent circuit components that only require classical bits for their computation. As they do not need to be included in the statevector simulator with exponential blow-up, even large numbers of classical gates and bits can be supported and calculated in real-time.
 
-In principle, most classical gates supported by qwire implement the default logical operations of boolean algebra.
+In principle, most classical gates supported by Qhoir implement the default logical operations of boolean algebra.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -132,7 +132,7 @@ Another important single-qubit gate is the <em>Hadamard</em> gate:
 |<img src="../../public/components/h.png" />|Hadamard|Creates an equal superposition from a state in the computational basis: <br> $\alpha\| 0⟩ + \beta\| 1⟩ \Rightarrow \alpha\| +⟩ - \beta\|-⟩$<br> $\|+⟩ = \frac{\| 0⟩ + \| 1⟩}{\sqrt{2}}$,<br>$\|-⟩ = \frac{\| 0⟩ - \| 1⟩}{\sqrt{2}}$|/|
 
 
-Finally, qwire supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta$). These gates all leave the state $|0\rangle$ untouched, while transforming the state $|1\rangle$ with a given phase shift.
+Finally, Qhoir supports three phase-shift gates: S, T, and R<sub>z</sub>($\theta$). These gates all leave the state $|0\rangle$ untouched, while transforming the state $|1\rangle$ with a given phase shift.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -150,7 +150,7 @@ $|00\rangle \rightarrow |00\rangle$, $|01\rangle \rightarrow |01\rangle$, $|10\r
 if the leftmost qubit is the control, or more general:
 $$\alpha|00\rangle + \beta|01\rangle + \gamma|10\rangle + \delta|11\rangle \rightarrow \alpha|00\rangle + \beta|01\rangle + \gamma|11\rangle + \delta|10\rangle $$
 
-In qwire, controlled gates are indicated by a black bar at the top. The control qubit is given through the input socket at the very top, and corresponds to the topmost output socket. The following controlled two-qubit gates are available:
+In Qhoir, controlled gates are indicated by a black bar at the top. The control qubit is given through the input socket at the very top, and corresponds to the topmost output socket. The following controlled two-qubit gates are available:
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -165,13 +165,13 @@ In qwire, controlled gates are indicated by a black bar at the top. The control 
 
 Controlled gates are not limited just one control qubit. Generally in quantum computing, controlled gates may have any number of control qubits, and are expected to perform their action on the target qubit if and only if **ALL** controls are in the state $|1\rangle$. 
 
-Qwire supports the _CCX_ or _CCNOT_ gate, also known as _Toffoli gate_, which applies the Pauli X gate if both inputs (passed through the two topmost input sockets) are equal to $|1\rangle$. The three output sockets correspond to the left and right control qubits and to the action qubit in order.
+Qhoir supports the _CCX_ or _CCNOT_ gate, also known as _Toffoli gate_, which applies the Pauli X gate if both inputs (passed through the two topmost input sockets) are equal to $|1\rangle$. The three output sockets correspond to the left and right control qubits and to the action qubit in order.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
 |<img src="../../public/components/ccx.png" />|CCNOT Gate|Applies the Pauli X gate to qubit 3 (left input) if both control inputs (top) are in state $\|1\rangle$. The two topmost outputs correspond to the left and right control bits in this order, and the bottom output corresponds to the target qubit.|/|
 
-One final common two-qubit gate is the SWAP gate. It swaps the values of two given qubits. Generally, this gate plays less of an important role in qwire, as the position of gates and the directions of layers can be chosen arbitrarily, while usually, quantum circuits are designed with fixed horizontal lines as their quantum wires.
+One final common two-qubit gate is the SWAP gate. It swaps the values of two given qubits. Generally, this gate plays less of an important role in Qhoir, as the position of gates and the directions of layers can be chosen arbitrarily, while usually, quantum circuits are designed with fixed horizontal lines as their quantum wires.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|
@@ -179,7 +179,7 @@ One final common two-qubit gate is the SWAP gate. It swaps the values of two giv
 
 
 ## UI Blocks
-UI Blocks are non-functional components provided by qwire to improve the legibility of constructed circuits. They do not affect the values of bits or qubits passing through them but can be used to structure wires and components in the breadbox.
+UI Blocks are non-functional components provided by Qhoir to improve the legibility of constructed circuits. They do not affect the values of bits or qubits passing through them but can be used to structure wires and components in the breadbox.
 
 |image|name|description|details view|
 |:----:|:--:|-----------|------------|

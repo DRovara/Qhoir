@@ -1,19 +1,19 @@
-# Getting Started with qwire
+# Getting Started with Qhoir
 
-In this starter's guide, we will look at simple qwire exercises that help you get used to wroking with the editor. Please consider the <a href="../documentation">documentation</a> as complimentary reading on the different components qwire offers.
+In this starter's guide, we will look at simple Qhoir exercises that help you get used to wroking with the editor. Please consider the <a href="../documentation">documentation</a> as complimentary reading on the different components Qhoir offers.
 
 While the getting started guide tries to explain most of the core concepts from scratch, we still recommend checking out other resources on quantum computing to build a general understanding of the topic, such as <a href="https://qiskit.org/textbook/preface.html">qiskit's Textbook</a>.
 
 All circuits constructed during this starter's guide are also provided in the <a href="../samples">samples directory</a> so you can check them out without any additional work.
 
-If you haven't already, check out how to open qwire in the <a href="../../README.md">repository's README</a>, and then come back here to get started.
+If you haven't already, check out how to open Qhoir in the <a href="../../README.md">repository's README</a>, and then come back here to get started.
 
 ## 1) Our first Circuit
 
-To get into the gist of working with qwire, let's start with a simple circuit as our first example.
+To get into the gist of working with Qhoir, let's start with a simple circuit as our first example.
 A _circuit_ is defined by a set of _components_ that are connected through wires. A signal is generated at the circuit's source and follows the wires in order until it reaches the end. In real life, circuits appear in all your electronic devices, carrying electrical signals. 
 
-In qwire's context, however, the concept of electricity does not really matter too much. The circuits are just "simulated", so exact voltages or anything like that do not play any role at all, all we care about is _ON_ (1) or _OFF_ (0). We call this a "bit".
+In Qhoir's context, however, the concept of electricity does not really matter too much. The circuits are just "simulated", so exact voltages or anything like that do not play any role at all, all we care about is _ON_ (1) or _OFF_ (0). We call this a "bit".
 
 To build our first circuit, let's start by picking a _source_ component from the toolbox on the left. To keep things simple, we will start with a _classical_ (non-quantum) source. it is the round object on the very left of the `Tools` group. (You can inspect a component's name by hovering it with your mouse).
 
@@ -27,9 +27,9 @@ The NOT gate will now do its job and invert the state of the bit sent out by the
 
 ## 2) Working with Classical Components: Half Adder
 
-Qwire also supports most of the other commonly used classical gates: AND, OR, NAND, NOR, XOR, and XNOR. With these, we already have more than enough gates for a universal set - in other words, any possible circuit can be constructed using just these few gates (in fact, even fewer than these 7 gates would already be enough).
+Qhoir also supports most of the other commonly used classical gates: AND, OR, NAND, NOR, XOR, and XNOR. With these, we already have more than enough gates for a universal set - in other words, any possible circuit can be constructed using just these few gates (in fact, even fewer than these 7 gates would already be enough).
 
-A special component we have in qwire is the _Fork_. It allows us to copy the value of a bit to two different parts of a circuit. Other commonly used circuit editors actually support this feature without requiring its own component, but in qwire there is a reason why we don't have that - commonly known as the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no cloning theorem</a>. But we will learn more about that later.
+A special component we have in Qhoir is the _Fork_. It allows us to copy the value of a bit to two different parts of a circuit. Other commonly used circuit editors actually support this feature without requiring its own component, but in Qhoir there is a reason why we don't have that - commonly known as the <a href="https://en.wikipedia.org/wiki/No-cloning_theorem">no cloning theorem</a>. But we will learn more about that later.
 
 We will now use these gates to construct an actual functional circuit with a clear goal in mind: The Half Adder.
 
@@ -84,9 +84,9 @@ If you want to, try it out! You'll find an example solution in the <a href="../s
 
 ## 3) Our first Quantum Circuit
 
-You have now made quite a few classical circuits, but the main point of qwire is to run quantum circuits, so it is time to get started with that!
+You have now made quite a few classical circuits, but the main point of Qhoir is to run quantum circuits, so it is time to get started with that!
 
-Just like a classical circuit, every quantum circuit **must** have a source - in this case, however, it is a quantum source, and behaves slightly differently. The quantum source is the second element of the `Tools` group in your toolbox. It looks like a classical source, but has hard edges instead of round ones (you will find a pattern in that throughout qwire - quantum components are typically "edgier" than their classical counterparts).
+Just like a classical circuit, every quantum circuit **must** have a source - in this case, however, it is a quantum source, and behaves slightly differently. The quantum source is the second element of the `Tools` group in your toolbox. It looks like a classical source, but has hard edges instead of round ones (you will find a pattern in that throughout Qhoir - quantum components are typically "edgier" than their classical counterparts).
 
 A quantum source also generates a signal. While we called the signal of classical sources "bits", we will call the signals of quantum sources "**qubits**". Just like bits, qubits can have a value of $0$ and $1$. In addition to that, however, qubits can have any value _in-between_ $0$ and $1$ - this is called a _superposition_.
 
@@ -94,7 +94,7 @@ What exaclty does _in-between_ mean? Let's imagine a qubit in a position that is
 
 There's one more tiny adaptation that needs to be made. We called the two possible states of a bit _OFF_ and _ON_, or $0$, and $1$. In quantum computing, these states are instead called $|0\rangle$ and $|1\rangle$,  and are not just numbers, but actually _vectors_ in _Dirac notation_. But that is starting to leave the scope of our simple getting started guide. If you want to learn more on this, check out other sources such as <a href="https://qiskit.org/textbook/preface.html">qiskit's Textbook</a>. Functionally, you can still interpret them as _OFF_ and _ON_.
 
-Now that we have covered the basics, it is time to work on our first quantum circuit. Pick the quantum source component and place it in the editor. You will see a blue line appearing through the component's body. This is the quantum equivalent to the grey circle in the classical source components. By clicking the quantum source, you can select its initial value. While for a classical source, the choice was between 0 and 1, here we can choose any superposition of $|0\rangle$ and $|1\rangle$. The coefficients of $|0\rangle$ and $|1\rangle$ tell the component, how much weight is to be placed on the state. The probability of measuring a state will be ***the square*** of its coefficient. This means that the sum of squares of the coefficients must always be $1$. Qwire does that automatically: If you pick any coefficient for one of the two states, it will determine the required coefficient for the other one on its own. If $|0\rangle$ has a coefficient of $1$, the coefficient of $|1\rangle$ will be $0$, etc...
+Now that we have covered the basics, it is time to work on our first quantum circuit. Pick the quantum source component and place it in the editor. You will see a blue line appearing through the component's body. This is the quantum equivalent to the grey circle in the classical source components. By clicking the quantum source, you can select its initial value. While for a classical source, the choice was between 0 and 1, here we can choose any superposition of $|0\rangle$ and $|1\rangle$. The coefficients of $|0\rangle$ and $|1\rangle$ tell the component, how much weight is to be placed on the state. The probability of measuring a state will be ***the square*** of its coefficient. This means that the sum of squares of the coefficients must always be $1$. Qhoir does that automatically: If you pick any coefficient for one of the two states, it will determine the required coefficient for the other one on its own. If $|0\rangle$ has a coefficient of $1$, the coefficient of $|1\rangle$ will be $0$, etc...
 
 This also means that if you want to have a perfectly equal superposition, the factors for $|0\rangle$ and $|1\rangle$ will not have to be $\frac{1}{2}$ each, but instead they will be $\frac{1}{\sqrt{2}}$. There's not really an easy way to insert that precisely into the input fields, but we will learn a simpler way to get a state like that soon anyways.
 
@@ -114,9 +114,9 @@ After this modification, you should see that the measurement results will be exa
 
 The state returns back to its default! This is because the Hadamard operator is actually its own inverse! You can try and play around with it some more.
 
-There is one final thing worth checking out before we move on: As mentioned above, measurements fundamentally interfere with the quantum system, and therefore, measurements can affect and irreversably change the state of a qubit - on a physical quantum computer. Qwire is built on a Statevector simulator, however. This means, that it actually has the ability to do measurements without affecting the quantum state as well. But in some cases, the effect of measurements might be beneficial for our algorithm. This is where measurement groups come into play. 
+There is one final thing worth checking out before we move on: As mentioned above, measurements fundamentally interfere with the quantum system, and therefore, measurements can affect and irreversably change the state of a qubit - on a physical quantum computer. Qhoir is built on a Statevector simulator, however. This means, that it actually has the ability to do measurements without affecting the quantum state as well. But in some cases, the effect of measurements might be beneficial for our algorithm. This is where measurement groups come into play. 
 
-Open the details view of a measurement component to select its group by clicking the group name you want. In qwire, measurements only "see" other measurements that belong to the same group. If your quantum circuit has two measurements, one of which is in group BLUE and one in group RED, then both measurements will produce results as if they were the only measurements in the circuit. If both are in the same group, however, then the result of one of the two will affect the other one. Furthermore, the bar chart in the measurement will contain probabilities of any possible combination of $0$ and $1$ states of all measurements in the same group.
+Open the details view of a measurement component to select its group by clicking the group name you want. In Qhoir, measurements only "see" other measurements that belong to the same group. If your quantum circuit has two measurements, one of which is in group BLUE and one in group RED, then both measurements will produce results as if they were the only measurements in the circuit. If both are in the same group, however, then the result of one of the two will affect the other one. Furthermore, the bar chart in the measurement will contain probabilities of any possible combination of $0$ and $1$ states of all measurements in the same group.
 
 A simple way to demonstrate this is by adding a second measurement after the first one, connecting its input with the previous component's output (preferably going back to the previous circuit where we only had ONE H gate, and not two). Then, add both components to the BLUE measurement group. From the circuit view, both will have a 50/50 rate of $|0\rangle$ and $|1\rangle$ in their results. However, if you open them up, you will notice that the results are not a perfectly equal distribution.
 
@@ -153,9 +153,9 @@ As a short exercise, try and find the circuits for the remaining three Bell Stat
 
 ## 5) Going Beyond
 
-We have now covered all the basics required to get into the construction of quantum circuits. There is still a lot more theory behind all of this, but qwire is built on the principle of learning by doing, so just hop into it and try out whatever comes to your mind!
+We have now covered all the basics required to get into the construction of quantum circuits. There is still a lot more theory behind all of this, but Qhoir is built on the principle of learning by doing, so just hop into it and try out whatever comes to your mind!
 
-In fact, qwire should really be seen as a didactical tool, rather than a high-end quantum simulator. The focus has not been put into creating an incredibly efficient simulator. If you add more and more qubits, you will notice the performance getting quite poor rather soon. The simulation of quantum systems is a hard problem, after all.
+In fact, Qhoir should really be seen as a didactical tool, rather than a high-end quantum simulator. The focus has not been put into creating an incredibly efficient simulator. If you add more and more qubits, you will notice the performance getting quite poor rather soon. The simulation of quantum systems is a hard problem, after all.
 
 If you want some pointers, there are still some more <a href="../samples">samples</a> to check out, which go beyond the scope of this introduction. Best of luck, and let's get qwiring!
 

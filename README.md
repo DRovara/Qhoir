@@ -32,7 +32,7 @@
 <a href="https://github.com/DRovara/qwire">
     <img src="public/favicon.png" alt="Logo" width="64" height="64">
 </a>
-<h3 align="center">qwire</h3>
+<h3 align="center">Qhoir</h3>
 
   <p align="center">
     quantum circuit editing tool
@@ -82,12 +82,12 @@
 
 ![screenshot-bell-state-full]
 
-Qwire is a quantum circuit editing tool that allows users to construct and immediately evaluate simple quantum and classical circuits.
-Qwire is built with its didactic value in mind, rather than focusing on efficiency. Using a statevector simulator in the background, it can run simple quantum algorithms accurately and supports the visualization of measurement results for further circuit inspection.
+Qhoir is a quantum circuit editing tool that allows users to construct and immediately evaluate simple quantum and classical circuits.
+Qhoir is built with its didactic value in mind, rather than focusing on efficiency. Using a statevector simulator in the background, it can run simple quantum algorithms accurately and supports the visualization of measurement results for further circuit inspection.
 
 Using a large, scrollable workspace, the user can construct multiple quantum circuits next to each other to compare their outputs, and quickly extend any constructed circuits. For small problem instances, the simulator is called in real-time with any change made to the environment, so that new results are immediately observable.
 
-In addition to more than 20 functional circuit components, qwire also supports several of UI components that can be used to organize and document complex circuits.
+In addition to more than 20 functional circuit components, Qhoir also supports several of UI components that can be used to organize and document complex circuits.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -135,13 +135,13 @@ You can run a development version of the project by running
     npm run dev
 ```
 
-Alternatively, you can build and run qwire using
+Alternatively, you can build and run Qhoir using
 ```sh
     npm run build
     npm run start
 ```
 
-After running the development or release version of qwire, you can access it through your browser on `localhost:3000`.
+After running the development or release version of Qhoir, you can access it through your browser on `localhost:3000`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -150,9 +150,9 @@ After running the development or release version of qwire, you can access it thr
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Please refer to "<a href="#getting-started">Getting Started</a>" to learn how to set up qwire and access it through your browser of choice.
+Please refer to "<a href="#getting-started">Getting Started</a>" to learn how to set up Qhoir and access it through your browser of choice.
 
-After opening qwire, you will reach the main editor view. From here, click components in the toolbox on the left to select them and then place them anywhere in the workspace through an additional click.
+After opening Qhoir, you will reach the main editor view. From here, click components in the toolbox on the left to select them and then place them anywhere in the workspace through an additional click.
 
 ![screenshot-half-adder]
 
@@ -229,8 +229,8 @@ Project Link: [https://github.com/DRovara/qwire](https://github.com/DRovara/qwir
 <!-- Links -->
 ## Further Documentation
 
-* [Getting started with qwire](doc/getting-started/)
-* [qwire Editor Documentation](doc/documentation/)
+* [Getting started with Qhoir](doc/getting-started/)
+* [Qhoir Editor Documentation](doc/documentation/)
 * [Sample Circuits](doc/samples/)
 * [qiskit Textbook on Quantum Computing](https://qiskit.org/textbook/preface.html)
 

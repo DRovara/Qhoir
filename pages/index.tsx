@@ -18,7 +18,7 @@ const Home: NextPage = () => {
       <Head>
         <title>Qhoir</title>
         <meta name="description" content="A quantum circuit editor." />
-        <link rel="icon" href="/favicon.png" />
+        <link rel="icon" href="favicon.png" />
       </Head>
       <UtensilBar ref={utensilBar} editor={editor} toolbox={toolbox}></UtensilBar>
       <div className={styles.contents}>

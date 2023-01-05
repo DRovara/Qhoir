@@ -29,7 +29,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<a href="https://github.com/DRovara/Qhoir">
+<a href="https://drovara.github.io/Qhoir/">
     <img src="public/favicon.png" alt="Logo" width="64" height="64">
 </a>
 <h3 align="center">Qhoir</h3>
@@ -42,7 +42,7 @@
     ·
     <a href="https://github.com/DRovara/Qhoir/issues">Report Bug</a>
     ·
-    <a href="https://github.com/DRovara/Qhoir/issues">Request Feature</a>
+    <a href="https://drovara.github.io/Qhoir/">Try it out!</a>
   </p>
 </div>
 
@@ -105,6 +105,9 @@ In addition to more than 20 functional circuit components, Qhoir also supports s
 
 <!-- GETTING STARTED -->
 ## Getting Started
+
+You can try out Qhoir on its <a href="https://drovara.github.io/Qhoir/">Github Pages site</a>.
+
 <a name="getting-started"></a>
 To get a local copy up and running follow these simple steps.
 
